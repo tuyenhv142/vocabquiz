@@ -1,0 +1,7 @@
+node_modules/
+dist/
+vocabulary-frontend/node_modules/
+vocabulary-frontend/dist/
+vocabulary-backend/node_modules/
+.env
+*.log
