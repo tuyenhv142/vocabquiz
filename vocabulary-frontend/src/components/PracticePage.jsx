@@ -1140,7 +1140,7 @@ const modeBtnStyle = {
 const cardStyle = {
   backgroundColor: '#ffffff',
   borderRadius: '24px',
-  padding: '36px 28px',
+  padding: 'clamp(20px, 4vw, 36px) clamp(16px, 3vw, 28px)',
   border: '1px solid #e2e8f0',
   boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
   textAlign: 'center',
@@ -1151,7 +1151,7 @@ const cardStyle = {
 
 const questionMetaStyle = {
   display: 'flex',
-  justifyContent: 'center',
+  justify: 'center',
   alignItems: 'center',
   width: '100%',
   marginBottom: '20px',
@@ -1162,10 +1162,11 @@ const questionMetaStyle = {
 const questionContainerStyle = {
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
+  justify: 'center',
   gap: '14px',
   margin: '10px 0 28px',
   width: '100%',
+  flexWrap: 'wrap',
 };
 
 const hintBtnStyle = {
@@ -1199,7 +1200,7 @@ const hintBoxStyle = {
 };
 
 const questionStyle = {
-  fontSize: '2.2rem',
+  fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
   fontWeight: 800,
   color: '#0f172a',
   textAlign: 'center',
@@ -1225,8 +1226,8 @@ const audioBtnStyle = {
 
 const optionsGridStyle = {
   display: 'grid',
-  gap: '14px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+  gap: '12px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
   width: '100%',
   maxWidth: '720px',
   margin: '0 auto',
