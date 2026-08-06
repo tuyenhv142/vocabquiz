@@ -1,5 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, CheckCircle2, AlertCircle, RotateCcw, Trophy, Target, Volume2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
+import {
+  ArrowLeft,
+  CheckCircle2,
+  AlertCircle,
+  RotateCcw,
+  Trophy,
+  Target,
+  Volume2,
+  Clock,
+  Zap,
+  HelpCircle,
+  Hourglass,
+} from 'lucide-react';
 
 const LearningStatus = {
   UNLEARNED: 'UNLEARNED',
@@ -56,11 +68,6 @@ function isTypo(input, target) {
 
 function shuffle(array) {
   return [...array].sort(() => Math.random() - 0.5);
-}
-
-function randomItem(array) {
-  if (!array.length) return undefined;
-  return array[Math.floor(Math.random() * array.length)];
 }
 
 function buildSessionQueue(cards) {
@@ -161,15 +168,13 @@ function buildOptions(allCards, currentCard) {
 
 function reinsertCard(queue, currentId, updatedCard, stepsAhead = 3) {
   const currentIndex = queue.findIndex((c) => c.id === currentId);
-  if (currentIndex === -1) return queue;
   const remaining = queue.filter((c) => c.id !== currentId);
-  if (updatedCard.status === LearningStatus.MASTERED) {
-    return remaining;
-  }
-  const insertAt = Math.min(currentIndex + stepsAhead, remaining.length);
+  const insertAt = currentIndex >= 0 ? Math.min(currentIndex + stepsAhead, remaining.length) : remaining.length;
   remaining.splice(insertAt, 0, updatedCard);
   return remaining;
 }
+
+const SLOW_TIME_THRESHOLD_SECONDS = 7; // Time threshold in seconds for a slow response
 
 export default function PracticePage({ setInfo, cards = [], onBack }) {
   const [sessionQueue, setSessionQueue] = useState(() => buildSessionQueue(cards));
@@ -180,7 +185,27 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
   const [showCorrection, setShowCorrection] = useState(false);
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+
+  // Time & Analytics State
+  const [questionStartTime, setQuestionStartTime] = useState(() => Date.now());
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [questionTimings, setQuestionTimings] = useState([]); // [{ term, definition, timeTaken, isCorrect, isSlow }]
   const [wrongCards, setWrongCards] = useState([]);
+  const [slowCards, setSlowCards] = useState([]);
+
+  // Live Timer Interval
+  useEffect(() => {
+    if (isFinished || !cards.length || feedback) return;
+
+    setQuestionStartTime(Date.now());
+    setElapsedSeconds(0);
+
+    const timer = setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [currentIndex, isFinished, feedback, cards.length]);
 
   useEffect(() => {
     setSessionQueue(buildSessionQueue(cards));
@@ -192,6 +217,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setScore(0);
     setIsFinished(false);
     setWrongCards([]);
+    setSlowCards([]);
+    setQuestionTimings([]);
   }, [cards]);
 
   const currentCard = sessionQueue[currentIndex] || null;
@@ -235,43 +262,96 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setInputValue('');
   };
 
-  const handleChoice = (choice) => {
+  const processQuestionAnswer = (isCorrect, chosenText) => {
     if (!currentCard || feedback) return;
-    setSelectedAnswer(choice);
-    const isCorrect = choice === correctAnswer;
+
+    const timeTaken = Math.max(1, Math.round((Date.now() - questionStartTime) / 1000));
+    const isSlow = timeTaken >= SLOW_TIME_THRESHOLD_SECONDS;
     let newScore = score;
 
-    if (isCorrect) {
-      newScore = score + 1;
-      setFeedback({ isCorrect: true, message: '✓ Correct!' });
-    } else {
-      setFeedback({ isCorrect: false, message: `✗ Incorrect — correct answer: "${correctAnswer}"` });
+    const timingRecord = {
+      term: currentCard.term,
+      definition: currentCard.definition,
+      timeTaken,
+      isCorrect,
+      isSlow,
+    };
+
+    setQuestionTimings((prev) => [...prev, timingRecord]);
+
+    if (isSlow) {
+      setSlowCards((prev) => {
+        if (prev.some((c) => c.term === currentCard.term)) return prev;
+        return [...prev, { id: currentCard.id, term: currentCard.term, definition: currentCard.definition, timeTaken }];
+      });
+    }
+
+    if (!isCorrect) {
       setWrongCards((prev) => {
-        if (prev.some((c) => c.id === currentCard.id)) return prev;
+        if (prev.some((c) => c.term === currentCard.term)) return prev;
         return [...prev, { id: currentCard.id, term: currentCard.term, definition: currentCard.definition }];
       });
     }
 
-    setScore(newScore);
+    let feedbackMsg = '';
+    if (isCorrect) {
+      newScore = score + 1;
+      setScore(newScore);
+      if (isSlow) {
+        feedbackMsg = `⏱️ Correct, but took ${timeTaken}s (slow >${SLOW_TIME_THRESHOLD_SECONDS}s)! Re-queuing word for extra speed practice.`;
+      } else {
+        feedbackMsg = `⚡ Excellent! Fast & correct (${timeTaken}s)!`;
+      }
+    } else {
+      feedbackMsg = `✗ Incorrect (${timeTaken}s) — correct answer: "${correctAnswer}"`;
+    }
+
+    setFeedback({
+      isCorrect: isCorrect && !isSlow,
+      isSlow,
+      timeTaken,
+      message: feedbackMsg,
+    });
+
+    // --- Adaptive Re-Queuing Logic ---
+    // If answer was wrong OR took too long (>7s), queue extra practice for this term!
+    let nextQueue = [...sessionQueue];
+    if (!isCorrect || isSlow) {
+      const extraPracticeCard = {
+        ...currentCard,
+        id: `${currentCard.id}-extra-${Date.now()}`,
+        isEngToVie: !currentCard.isEngToVie, // Test opposite translation direction for mastery!
+      };
+      nextQueue = reinsertCard(sessionQueue, currentCard.id, extraPracticeCard, 3);
+      setSessionQueue(nextQueue);
+    }
 
     setTimeout(() => {
       setSelectedAnswer('');
       setFeedback(null);
 
       const nextIdx = currentIndex + 1;
-      if (nextIdx >= sessionQueue.length) {
-        finishPractice(newScore, sessionQueue.length);
+      if (nextIdx >= nextQueue.length) {
+        finishPractice(newScore, nextQueue.length);
       } else {
         setCurrentIndex(nextIdx);
       }
-    }, 1400);
+    }, isSlow && isCorrect ? 2000 : 1400);
   };
 
-  const handlePracticeWrong = () => {
-    const wrongOnly = wrongCards.map((wc) => ({
-      id: wc.id,
-      term: wc.term,
-      definition: wc.definition,
+  const handleChoice = (choice) => {
+    setSelectedAnswer(choice);
+    const isCorrect = choice === correctAnswer;
+    processQuestionAnswer(isCorrect, choice);
+  };
+
+  const handlePracticeWrongOrSlow = () => {
+    const combinedNeedPractice = [...new Set([...wrongCards, ...slowCards].map((c) => c.term))];
+    const targetCards = cards.filter((c) => combinedNeedPractice.includes(c.term));
+    const practiceOnly = (targetCards.length > 0 ? targetCards : cards).map((c, idx) => ({
+      id: c.id ?? `${c.term}-${idx}`,
+      term: c.term,
+      definition: c.definition,
       status: LearningStatus.UNLEARNED,
       streak: 0,
       easeFactor: 2.5,
@@ -280,7 +360,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       lastReviewedAt: null,
       isEngToVie: Math.random() > 0.5,
     }));
-    setSessionQueue(shuffle(wrongOnly));
+
+    setSessionQueue(shuffle(practiceOnly));
     setCurrentIndex(0);
     setInputValue('');
     setSelectedAnswer('');
@@ -289,6 +370,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setScore(0);
     setIsFinished(false);
     setWrongCards([]);
+    setSlowCards([]);
+    setQuestionTimings([]);
   };
 
   const handleWrittenSubmit = () => {
@@ -298,41 +381,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     const exactMatch = normalizedInput === normalizedCorrect;
     const typoMatch = !exactMatch && isTypo(inputValue, correctAnswer);
     const isCorrect = exactMatch || typoMatch;
-    const nextCard = { ...currentCard };
 
-    if (isCorrect) {
-      nextCard.status = LearningStatus.MASTERED;
-      nextCard.streak = Math.max(2, nextCard.streak + 1);
-      nextCard.lastReviewedAt = new Date().toISOString();
-      nextCard.intervalDays = Math.max(1, Math.round(nextCard.intervalDays * nextCard.easeFactor || 1));
-      setScore((prev) => prev + 1);
-      setFeedback({
-        isCorrect: true,
-        message: typoMatch
-          ? `Correct, with a typo. The right answer is “${correctAnswer}”.`
-          : 'Correct! This card is now mastered.',
-      });
-      setSessionQueue((prev) => prev.filter((card) => card.id !== currentCard.id));
-      return;
-    }
-
-    nextCard.status = LearningStatus.LEARNING;
-    nextCard.streak = 0;
-    nextCard.lastReviewedAt = new Date().toISOString();
-    nextCard.intervalDays = 0;
-    setFeedback({
-      isCorrect: false,
-      message: `Not quite. The right answer is “${correctAnswer}”.`,
-    });
-    setShowCorrection(true);
-    setSessionQueue((prevQueue) => {
-      const filtered = prevQueue.filter((card) => card.id !== currentCard.id);
-      const newQueue = reinsertCard(filtered, currentIndex, nextCard, 3);
-      return newQueue;
-    });
+    processQuestionAnswer(isCorrect, inputValue);
   };
-
-
 
   if (!cards.length) {
     return (
@@ -343,7 +394,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </button>
           <div>
             <span style={eyebrowStyle}>Practice Mode</span>
-            <h1 style={titleStyle}>{setInfo.title}</h1>
+            <h1 style={titleStyle}>{setInfo?.title || 'Vocabulary Practice'}</h1>
           </div>
         </div>
         <div style={emptyStyle}>No cards available for practice.</div>
@@ -351,23 +402,30 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     );
   }
 
+  // --- Session Completion Summary ---
   if (completed) {
     const totalCount = sessionQueue.length;
     const percentage = totalCount > 0 ? Math.round((score / totalCount) * 100) : 0;
     const hasWrongCards = wrongCards.length > 0;
+    const hasSlowCards = slowCards.length > 0;
+
+    // Calculate time metrics
+    const totalTimeTaken = questionTimings.reduce((sum, t) => sum + t.timeTaken, 0);
+    const avgTimePerQuestion = questionTimings.length > 0 ? (totalTimeTaken / questionTimings.length).toFixed(1) : 0;
+
     let recommendation = '';
     let recColor = '#15803d';
-    if (percentage >= 90) {
-      recommendation = 'Excellent! You have mastered this set. No more practice needed! 🎉';
+    if (percentage >= 90 && !hasSlowCards) {
+      recommendation = 'Outstanding speed & accuracy! You have fully mastered this vocabulary set! 🎉';
       recColor = '#15803d';
-    } else if (percentage >= 70) {
-      recommendation = 'Good job! A few more rounds of practice on the wrong answers will help solidify your knowledge.';
+    } else if (percentage >= 75) {
+      recommendation = 'Great job! A few extra speed rounds will make your recall effortless.';
       recColor = '#ca8a04';
     } else if (percentage >= 50) {
-      recommendation = 'Keep practicing! Focus on the words you got wrong to improve your score.';
+      recommendation = 'Good effort! Focus on the slow and incorrect words to build faster recall.';
       recColor = '#ea580c';
     } else {
-      recommendation = 'You need more practice. Review the vocabulary and try again!';
+      recommendation = 'Practice makes perfect! Review the slow words below and test again.';
       recColor = '#dc2626';
     }
 
@@ -379,59 +437,135 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </button>
           <div>
             <span style={eyebrowStyle}>Practice Completed</span>
-            <h1 style={titleStyle}>{setInfo.title}</h1>
+            <h1 style={titleStyle}>{setInfo?.title || 'Vocabulary Practice'}</h1>
           </div>
         </div>
+
         <div style={achievementCardStyle}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
-            <Trophy size={28} color='#f59e0b' />
+            <Trophy size={28} color="#f59e0b" />
             <h2 style={{ margin: 0 }}>Practice Results</h2>
           </div>
 
-          {/* Percentage circle */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', margin: '12px 0' }}>
-            <div style={{
-              width: '90px', height: '90px', borderRadius: '50%',
-              background: `conic-gradient(${recColor} ${percentage * 3.6}deg, #e2e8f0 0deg)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <div style={{
-                width: '70px', height: '70px', borderRadius: '50%', backgroundColor: '#ffffff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 800, fontSize: '1.2rem', color: recColor,
-              }}>
-                {percentage}%
+          {/* Percentage Circle & Stats */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', alignItems: 'center', margin: '16px 0' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <div
+                style={{
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '50%',
+                  background: `conic-gradient(${recColor} ${percentage * 3.6}deg, #e2e8f0 0deg)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: '70px',
+                    height: '70px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 800,
+                    fontSize: '1.2rem',
+                    color: recColor,
+                  }}
+                >
+                  {percentage}%
+                </div>
               </div>
+              <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Score</span>
             </div>
-            <span style={{ color: '#64748b', fontSize: '0.85rem' }}>
-              {score} correct out of {sessionQueue.length} questions
-            </span>
+
+            {/* Response Time Metric Card */}
+            <div style={timeStatCardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#2563eb', fontWeight: 700, fontSize: '0.85rem' }}>
+                <Clock size={16} /> Avg Speed
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>
+                {avgTimePerQuestion}s <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>/ ques</span>
+              </div>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Target: &lt; {SLOW_TIME_THRESHOLD_SECONDS}s</span>
+            </div>
           </div>
 
-          {/* Recommendation */}
-          <div style={{
-            padding: '12px 16px', borderRadius: '14px',
-            backgroundColor: `${recColor}12`, border: `1px solid ${recColor}30`,
-            color: recColor, fontWeight: 600, fontSize: '0.9rem', textAlign: 'center',
-          }}>
+          {/* Recommendation Banner */}
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: '14px',
+              backgroundColor: `${recColor}12`,
+              border: `1px solid ${recColor}30`,
+              color: recColor,
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              textAlign: 'center',
+            }}
+          >
             <Target size={16} style={{ verticalAlign: 'middle', marginRight: '6px' }} />
             {recommendation}
           </div>
 
-          {/* Wrong cards list */}
+          {/* Slow Words List */}
+          {hasSlowCards && (
+            <div style={{ textAlign: 'left', width: '100%', marginTop: '12px' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem', color: '#d97706', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Hourglass size={16} /> Slow Recall Terms (&gt;{SLOW_TIME_THRESHOLD_SECONDS}s threshold):
+              </p>
+              <div style={{ display: 'grid', gap: '6px' }}>
+                {slowCards.map((sc) => (
+                  <div
+                    key={sc.id}
+                    style={{
+                      display: 'flex',
+                      justify: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: '#fffbe3',
+                      border: '1px solid #fef08a',
+                      fontSize: '0.88rem',
+                    }}
+                  >
+                    <div>
+                      <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '8px' }}>{sc.term}</span>
+                      <span style={{ color: '#64748b' }}>{sc.definition}</span>
+                    </div>
+                    <span style={{ fontWeight: 700, color: '#d97706', fontSize: '0.8rem', backgroundColor: '#fef3c7', padding: '2px 8px', borderRadius: '12px' }}>
+                      ⏱️ {sc.timeTaken}s
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Wrong Cards List */}
           {hasWrongCards && (
-            <div style={{ textAlign: 'left', width: '100%' }}>
-              <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem', color: '#475569' }}>
-                Words to review ({wrongCards.length}):
+            <div style={{ textAlign: 'left', width: '100%', marginTop: '12px' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <AlertCircle size={16} /> Incorrect Terms ({wrongCards.length}):
               </p>
               <div style={{ display: 'grid', gap: '6px' }}>
                 {wrongCards.map((wc) => (
-                  <div key={wc.id} style={{
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '8px 12px', borderRadius: '10px',
-                    backgroundColor: '#fef2f2', border: '1px solid #fecaca', fontSize: '0.88rem',
-                  }}>
-                    <span style={{ fontWeight: 600, color: '#0f172a' }}>{wc.term}</span>
+                  <div
+                    key={wc.id}
+                    style={{
+                      display: 'flex',
+                      justify: 'space-between',
+                      alignItems: 'center',
+                      padding: '8px 12px',
+                      borderRadius: '10px',
+                      backgroundColor: '#fef2f2',
+                      border: '1px solid #fecaca',
+                      fontSize: '0.88rem',
+                    }}
+                  >
+                    <span style={{ fontWeight: 700, color: '#0f172a' }}>{wc.term}</span>
                     <span style={{ color: '#64748b' }}>{wc.definition}</span>
                   </div>
                 ))}
@@ -439,22 +573,30 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
             </div>
           )}
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '4px' }}>
-            {hasWrongCards && (
-              <button onClick={handlePracticeWrong} style={{
-                ...nextBtnStyle,
-                backgroundColor: '#dc2626',
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-              }}>
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '14px' }}>
+            {(hasWrongCards || hasSlowCards) && (
+              <button
+                onClick={handlePracticeWrongOrSlow}
+                style={{
+                  ...nextBtnStyle,
+                  backgroundColor: '#dc2626',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
                 <RotateCcw size={15} />
-                Practice Wrong Questions ({wrongCards.length})
+                Retest Slow & Incorrect Words ({wrongCards.length + slowCards.length})
               </button>
             )}
-            <button onClick={onBack} style={{
-              ...nextBtnStyle,
-              backgroundColor: hasWrongCards ? '#64748b' : '#2563eb',
-            }}>
+            <button
+              onClick={onBack}
+              style={{
+                ...nextBtnStyle,
+                backgroundColor: hasWrongCards || hasSlowCards ? '#64748b' : '#2563eb',
+              }}
+            >
               Back to Review
             </button>
           </div>
@@ -463,30 +605,11 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     );
   }
 
-  if (showCorrection && feedback && !feedback.isCorrect) {
-    return (
-      <div style={pageStyle}>
-        <div style={headerStyle}>
-          <button onClick={onBack} style={backBtnStyle}>
-            <ArrowLeft size={16} />
-          </button>
-          <div>
-            <span style={eyebrowStyle}>Correction</span>
-            <h1 style={titleStyle}>{setInfo.title}</h1>
-          </div>
-        </div>
-        <div style={correctionCardStyle}>
-          <p style={{ margin: 0, color: '#475569' }}>Your answer:</p>
-          <div style={correctionAnswerStyle}>{inputValue || 'No answer provided'}</div>
-          <p style={{ margin: '16px 0 0 0', color: '#475569' }}>Correct answer:</p>
-          <div style={correctionCorrectStyle}>{correctAnswer}</div>
-          <button onClick={handleContinue} style={nextBtnStyle}>
-            Continue Practice
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // Timer Color State
+  const isTimerSlow = elapsedSeconds >= SLOW_TIME_THRESHOLD_SECONDS;
+  const isTimerWarning = elapsedSeconds >= 5 && elapsedSeconds < SLOW_TIME_THRESHOLD_SECONDS;
+  const timerBadgeBg = isTimerSlow ? '#fee2e2' : isTimerWarning ? '#fef3c7' : '#dcfce7';
+  const timerBadgeColor = isTimerSlow ? '#dc2626' : isTimerWarning ? '#d97706' : '#15803d';
 
   return (
     <div style={pageStyle}>
@@ -496,34 +619,48 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
         </button>
         <div>
           <span style={eyebrowStyle}>Practice Mode</span>
-          <h1 style={titleStyle}>{setInfo.title}</h1>
+          <h1 style={titleStyle}>{setInfo?.title || 'Vocabulary Practice'}</h1>
         </div>
       </div>
 
       <div style={cardStyle}>
+        
+        {/* Question Header & Live Question Timer */}
         <div style={questionMetaStyle}>
-          <span style={questionLabelStyle}>Question {currentIndex + 1} of {sessionQueue.length}</span>
+          <span style={questionLabelStyle}>
+            Question {currentIndex + 1} of {sessionQueue.length}
+          </span>
+
+          {/* Live Timer Badge */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              backgroundColor: timerBadgeBg,
+              color: timerBadgeColor,
+              fontSize: '0.8rem',
+              fontWeight: 800,
+              transition: 'all 0.3s ease',
+            }}
+            title={`Timer for current question. Threshold is ${SLOW_TIME_THRESHOLD_SECONDS}s.`}
+          >
+            <Clock size={14} />
+            <span>00:{elapsedSeconds < 10 ? `0${elapsedSeconds}` : elapsedSeconds}s</span>
+            {isTimerSlow && <span style={{ fontSize: '0.7rem' }}>(Slow - Extra practice queued)</span>}
+          </div>
+
           <span style={questionTypeStyle}>Multiple Choice</span>
         </div>
+
+        {/* Question Word */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
           <div style={{ ...questionStyle, marginBottom: 0 }}>{questionText}</div>
           <button
             onClick={() => playPronunciation(currentCard?.term || questionText)}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '38px',
-              height: '38px',
-              borderRadius: '50%',
-              border: '1px solid #cbd5e1',
-              backgroundColor: '#f8fafc',
-              color: '#2563eb',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(37,99,235,0.08)',
-              transition: 'all 0.15s ease',
-              flexShrink: 0,
-            }}
+            style={audioBtnStyle}
             title="Listen to English pronunciation"
             aria-label="Listen to English pronunciation"
           >
@@ -531,6 +668,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </button>
         </div>
 
+        {/* Options */}
         {questionType === QuestionType.MULTIPLE_CHOICE ? (
           <div style={optionsGridStyle}>
             {choices.map((choice, index) => {
@@ -550,7 +688,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                     ...optionBtnStyle,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
+                    justify: 'space-between',
                     gap: '12px',
                     borderColor: (showAsCorrect || revealCorrect) ? '#16a34a' : showAsWrong ? '#dc2626' : '#cbd5e1',
                     borderWidth: highlighted ? '2px' : '1px',
@@ -562,41 +700,17 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                 >
                   <span>{choice}</span>
                   {showAsCorrect && (
-                    <span style={{
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      backgroundColor: '#16a34a',
-                      color: '#ffffff',
-                      flexShrink: 0,
-                    }}>
+                    <span style={correctBadgeStyle}>
                       Correct ✓
                     </span>
                   )}
                   {showAsWrong && (
-                    <span style={{
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      backgroundColor: '#dc2626',
-                      color: '#ffffff',
-                      flexShrink: 0,
-                    }}>
+                    <span style={wrongBadgeStyle}>
                       Wrong ✗
                     </span>
                   )}
                   {revealCorrect && (
-                    <span style={{
-                      padding: '3px 10px',
-                      borderRadius: '12px',
-                      fontSize: '12px',
-                      fontWeight: 800,
-                      backgroundColor: '#16a34a',
-                      color: '#ffffff',
-                      flexShrink: 0,
-                    }}>
+                    <span style={correctBadgeStyle}>
                       Correct ✓
                     </span>
                   )}
@@ -630,13 +744,14 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </div>
         )}
 
+        {/* Feedback Banner */}
         {feedback && (
           <div
             style={{
               ...feedbackStyle,
-              backgroundColor: feedback.isCorrect ? '#dcfce7' : '#fee2e2',
-              border: feedback.isCorrect ? '1px solid #86efac' : '1px solid #fecaca',
-              color: feedback.isCorrect ? '#15803d' : '#991b1b',
+              backgroundColor: feedback.isCorrect ? '#dcfce7' : feedback.isSlow ? '#fef3c7' : '#fee2e2',
+              border: feedback.isCorrect ? '1px solid #86efac' : feedback.isSlow ? '1px solid #fde047' : '1px solid #fecaca',
+              color: feedback.isCorrect ? '#15803d' : feedback.isSlow ? '#b45309' : '#991b1b',
               fontWeight: 600,
               display: 'flex',
               alignItems: 'center',
@@ -646,6 +761,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           >
             {feedback.isCorrect ? (
               <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+            ) : feedback.isSlow ? (
+              <Hourglass size={18} style={{ flexShrink: 0 }} />
             ) : (
               <AlertCircle size={18} style={{ flexShrink: 0 }} />
             )}
@@ -657,6 +774,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
   );
 }
 
+// --- Styles ---
 const pageStyle = {
   width: '100%',
   boxSizing: 'border-box',
@@ -693,154 +811,167 @@ const eyebrowStyle = {
   letterSpacing: '0.18em',
   textTransform: 'uppercase',
   color: '#2563eb',
-  fontSize: '8px',
-  fontWeight: 700,
+  fontSize: '9px',
+  fontWeight: 800,
   marginBottom: '4px',
 };
 
 const titleStyle = {
   margin: 0,
-  fontSize: '1.2rem',
-  lineHeight: 1.16,
+  fontSize: '1.4rem',
+  fontWeight: 800,
+  color: '#0f172a',
 };
 
 const cardStyle = {
-  padding: '20px',
-  borderRadius: '22px',
-  background: '#ffffff',
-  border: '1px solid rgba(148,163,184,0.18)',
-  boxShadow: '0 12px 24px rgba(15,23,42,0.06)',
+  backgroundColor: '#ffffff',
+  borderRadius: '20px',
+  padding: '24px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
 };
 
 const questionMetaStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
-  gap: '12px',
-  marginBottom: '18px',
+  marginBottom: '16px',
   flexWrap: 'wrap',
+  gap: '8px',
 };
 
 const questionLabelStyle = {
-  color: '#475569',
-  fontSize: '0.82rem',
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
+  fontSize: '0.85rem',
+  fontWeight: 700,
+  color: '#64748b',
 };
 
 const questionTypeStyle = {
-  color: '#0f172a',
-  fontSize: '0.9rem',
-  fontWeight: 600,
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  color: '#475569',
+  backgroundColor: '#f1f5f9',
+  padding: '3px 10px',
+  borderRadius: '12px',
 };
 
 const questionStyle = {
-  marginBottom: '18px',
-  fontSize: '1.1rem',
-  lineHeight: 1.5,
+  fontSize: '1.6rem',
+  fontWeight: 800,
   color: '#0f172a',
+  marginBottom: '14px',
+};
+
+const audioBtnStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  width: '38px',
+  height: '38px',
+  borderRadius: '50%',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#f8fafc',
+  color: '#2563eb',
+  cursor: 'pointer',
+  boxShadow: '0 2px 6px rgba(37,99,235,0.08)',
+  transition: 'all 0.15s ease',
+  flexShrink: 0,
 };
 
 const optionsGridStyle = {
   display: 'grid',
   gap: '12px',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  marginBottom: '18px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
 };
 
 const optionBtnStyle = {
-  width: '100%',
-  padding: '16px',
-  borderRadius: '16px',
+  padding: '14px 18px',
+  borderRadius: '14px',
   border: '1px solid #cbd5e1',
   backgroundColor: '#ffffff',
-  color: '#0f172a',
-  textAlign: 'left',
-  cursor: 'pointer',
   fontSize: '0.95rem',
-  lineHeight: 1.4,
+  cursor: 'pointer',
+  textAlign: 'left',
+  transition: 'all 0.15s ease',
 };
 
-const inputStyle = {
-  width: '100%',
-  padding: '14px 16px',
-  borderRadius: '16px',
-  border: '1px solid #cbd5e1',
-  backgroundColor: '#f8fafc',
-  outline: 'none',
-  fontSize: '1rem',
+const correctBadgeStyle = {
+  padding: '3px 10px',
+  borderRadius: '12px',
+  fontSize: '12px',
+  fontWeight: 800,
+  backgroundColor: '#16a34a',
+  color: '#ffffff',
+  flexShrink: 0,
 };
 
-const footerStyle = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '12px',
-  flexWrap: 'wrap',
+const wrongBadgeStyle = {
+  padding: '3px 10px',
+  borderRadius: '12px',
+  fontSize: '12px',
+  fontWeight: 800,
+  backgroundColor: '#dc2626',
+  color: '#ffffff',
+  flexShrink: 0,
 };
 
 const feedbackStyle = {
-  padding: '12px 14px',
+  padding: '12px 16px',
   borderRadius: '14px',
-  flex: '1 1 260px',
+  fontSize: '0.9rem',
 };
 
-const correctionCardStyle = {
-  padding: '24px',
-  borderRadius: '22px',
+const achievementCardStyle = {
   backgroundColor: '#ffffff',
-  border: '1px solid rgba(148,163,184,0.18)',
-  boxShadow: '0 12px 24px rgba(15,23,42,0.06)',
-  display: 'grid',
+  borderRadius: '20px',
+  padding: '28px',
+  border: '1px solid #e2e8f0',
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
   gap: '16px',
+  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
 };
 
-const correctionAnswerStyle = {
-  padding: '16px',
+const timeStatCardStyle = {
+  backgroundColor: '#eff6ff',
+  border: '1px solid #bfdbfe',
   borderRadius: '16px',
-  backgroundColor: '#f8fafc',
-  color: '#0f172a',
-  minHeight: '56px',
-  display: 'grid',
-  placeItems: 'center start',
-};
-
-const correctionCorrectStyle = {
-  padding: '16px',
-  borderRadius: '16px',
-  backgroundColor: '#ecfdf5',
-  color: '#166534',
-  minHeight: '56px',
-  display: 'grid',
-  placeItems: 'center start',
+  padding: '12px 20px',
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: '4px',
 };
 
 const nextBtnStyle = {
-  padding: '12px 18px',
+  padding: '12px 24px',
   borderRadius: '14px',
   border: 'none',
   backgroundColor: '#2563eb',
   color: '#ffffff',
-  cursor: 'pointer',
+  fontSize: '0.9rem',
   fontWeight: 700,
-  minWidth: '180px',
+  cursor: 'pointer',
 };
 
-const achievementCardStyle = {
-  padding: '28px',
-  borderRadius: '22px',
-  backgroundColor: '#ffffff',
-  border: '1px solid rgba(148,163,184,0.2)',
-  boxShadow: '0 14px 28px rgba(15,23,42,0.08)',
-  display: 'grid',
-  gap: '16px',
-  textAlign: 'center',
+const inputStyle = {
+  width: '100%',
+  padding: '12px 16px',
+  borderRadius: '14px',
+  border: '1px solid #cbd5e1',
+  fontSize: '1rem',
+  boxSizing: 'border-box',
+  outline: 'none',
 };
 
 const emptyStyle = {
-  padding: '30px',
-  borderRadius: '18px',
-  backgroundColor: '#f8fafc',
   textAlign: 'center',
+  padding: '40px',
   color: '#64748b',
+  backgroundColor: '#ffffff',
+  borderRadius: '16px',
+  border: '1px solid #e2e8f0',
 };
