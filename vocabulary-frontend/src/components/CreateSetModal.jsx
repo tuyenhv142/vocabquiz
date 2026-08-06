@@ -757,9 +757,9 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
             </h3>
           </div>
 
-          <div style={{ maxHeight: '420px', overflowY: 'auto', paddingRight: '6px', display: 'grid', gap: '12px' }}>
+          <div style={{ maxHeight: '540px', overflowY: 'auto', paddingRight: '8px', paddingBottom: '160px', display: 'grid', gap: '14px' }}>
             {cards.map((card, index) => (
-              <div key={index} style={cardRowContainerStyle}>
+              <div key={index} style={{ ...cardRowContainerStyle, zIndex: termSuggestions[index]?.items?.length ? 100 : cards.length - index, position: 'relative' }}>
                 
                 {/* Row Header */}
                 <div style={cardRowHeaderStyle}>
@@ -815,7 +815,7 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
                 <div style={cardRowGridStyle}>
                   
                   {/* Term Input & Suggestions */}
-                  <div style={{ position: 'relative' }}>
+                  <div style={{ position: 'relative', zIndex: termSuggestions[index]?.items?.length ? 101 : 1 }}>
                     <label style={fieldLabelStyle}>Term (Word)*</label>
                     <input
                       type="text"
@@ -826,6 +826,9 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
                     />
                     {termSuggestions[index] && termSuggestions[index].items?.length > 0 && (
                       <div style={suggestionsBoxStyle}>
+                        <div style={{ padding: '6px 12px', backgroundColor: '#f1f5f9', fontSize: '0.7rem', fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          ✨ Word Suggestions
+                        </div>
                         {termSuggestions[index].items.map((sug, sIdx) => (
                           <button
                             key={sIdx}
@@ -833,7 +836,8 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
                             onClick={() => applyTermSuggestion(index, sug)}
                             style={suggestionItemStyle}
                           >
-                            <span style={{ fontWeight: 700, color: '#1e293b' }}>{sug.term}</span>
+                            <span style={{ fontWeight: 700, color: '#0f172a' }}>{sug.term}</span>
+                            <span style={{ fontSize: '0.7rem', color: '#6366f1', fontWeight: 600 }}>Select</span>
                           </button>
                         ))}
                       </div>
@@ -1099,10 +1103,10 @@ const suggestionsBoxStyle = {
   left: 0,
   right: 0,
   backgroundColor: '#ffffff',
-  border: '1px solid #cbd5e1',
-  borderRadius: '8px',
-  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-  zIndex: 20,
+  border: '2px solid #6366f1',
+  borderRadius: '12px',
+  boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+  zIndex: 99999,
   marginTop: '4px',
   overflow: 'hidden',
 };
@@ -1110,7 +1114,7 @@ const suggestionsBoxStyle = {
 const suggestionItemStyle = {
   width: '100%',
   textAlign: 'left',
-  padding: '8px 12px',
+  padding: '10px 14px',
   backgroundColor: '#ffffff',
   border: 'none',
   borderBottom: '1px solid #f1f5f9',
@@ -1119,6 +1123,7 @@ const suggestionItemStyle = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  transition: 'background-color 0.15s ease',
 };
 
 const closeBtnStyle = {
