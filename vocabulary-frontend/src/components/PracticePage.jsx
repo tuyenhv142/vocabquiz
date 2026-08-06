@@ -71,24 +71,38 @@ function isTypo(input, target) {
   return cleanedTarget.length > 5 && levenshtein(cleanedInput, cleanedTarget) === 1;
 }
 
-function stripPinyin(text) {
+function stripParentheses(text) {
   if (!text) return '';
   return String(text)
-    .replace(/\s*\([a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s,.'"-]+\)/gi, '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s*\[[^\]]*\]/g, '')
     .trim();
+}
+
+function removeAccents(str) {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
 }
 
 function checkWrittenAnswer(input, target) {
   if (!input || !target) return false;
-  const cleanTarget = stripPinyin(target);
-  const normalizedInput = normalizeText(input);
+  const cleanTarget = stripParentheses(target);
+  const normInput = normalizeText(input);
+  const normTarget = normalizeText(cleanTarget);
 
-  if (normalizedInput === normalizeText(cleanTarget)) return true;
+  if (normInput === normTarget) return true;
+  if (removeAccents(normInput) === removeAccents(normTarget)) return true;
 
   const subDefinitions = cleanTarget.split(/[,;/]/).map((d) => normalizeText(d));
-  if (subDefinitions.some((sub) => sub === normalizedInput)) return true;
+  if (subDefinitions.some((sub) => sub === normInput || removeAccents(sub) === removeAccents(normInput))) {
+    return true;
+  }
 
-  if (cleanTarget.length > 5 && isTypo(input, cleanTarget)) return true;
+  if (normTarget.length > 5 && isTypo(input, cleanTarget)) return true;
 
   return false;
 }
