@@ -71,6 +71,28 @@ function isTypo(input, target) {
   return cleanedTarget.length > 5 && levenshtein(cleanedInput, cleanedTarget) === 1;
 }
 
+function stripPinyin(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/\s*\([a-zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s,.'"-]+\)/gi, '')
+    .trim();
+}
+
+function checkWrittenAnswer(input, target) {
+  if (!input || !target) return false;
+  const cleanTarget = stripPinyin(target);
+  const normalizedInput = normalizeText(input);
+
+  if (normalizedInput === normalizeText(cleanTarget)) return true;
+
+  const subDefinitions = cleanTarget.split(/[,;/]/).map((d) => normalizeText(d));
+  if (subDefinitions.some((sub) => sub === normalizedInput)) return true;
+
+  if (cleanTarget.length > 5 && isTypo(input, cleanTarget)) return true;
+
+  return false;
+}
+
 function shuffle(array) {
   return [...array].sort(() => Math.random() - 0.5);
 }
@@ -351,6 +373,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
     setTimeout(() => {
       setSelectedAnswer('');
+      setInputValue('');
       setFeedback(null);
 
       const nextIdx = currentIndex + 1;
@@ -401,13 +424,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
   };
 
   const handleWrittenSubmit = () => {
-    if (!currentCard || feedback) return;
-    const normalizedInput = normalizeText(inputValue);
-    const normalizedCorrect = normalizeText(correctAnswer);
-    const exactMatch = normalizedInput === normalizedCorrect;
-    const typoMatch = !exactMatch && isTypo(inputValue, correctAnswer);
-    const isCorrect = exactMatch || typoMatch;
-
+    if (!currentCard || feedback || !inputValue.trim()) return;
+    const isCorrect = checkWrittenAnswer(inputValue, correctAnswer);
     processQuestionAnswer(isCorrect, inputValue);
   };
 
