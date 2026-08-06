@@ -107,16 +107,16 @@ const titleStyle = {
 const cardStyle = {
   backgroundColor: '#ffffff',
   borderRadius: '24px',
-  padding: '28px',
+  padding: '18px 24px',
   border: '1px solid #e2e8f0',
-  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
+  boxShadow: '0 12px 24px -8px rgba(0, 0, 0, 0.05)',
 };
 
 const actionToolbarStyle = {
   display: 'flex',
   justify: 'center',
   gap: '12px',
-  marginBottom: '24px',
+  marginBottom: '16px',
   flexWrap: 'wrap',
 };
 

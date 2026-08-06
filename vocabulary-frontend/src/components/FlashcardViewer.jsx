@@ -56,20 +56,20 @@ export default function FlashcardViewer({ cards = [] }) {
   }
 
   return (
-    <div style={{ maxWidth: '680px', margin: '0 auto' }}>
+    <div style={{ maxWidth: '560px', margin: '0 auto' }}>
       
       {/* Progress Meta */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', fontWeight: 700, fontSize: '0.85rem', color: '#475569' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontWeight: 700, fontSize: '0.8rem', color: '#475569' }}>
         <span>Card {currentIndex + 1} of {cards.length}</span>
-        <span style={{ fontSize: '0.75rem', color: '#64748b', backgroundColor: '#f1f5f9', padding: '4px 10px', borderRadius: '12px' }}>
+        <span style={{ fontSize: '0.725rem', color: '#64748b', backgroundColor: '#f1f5f9', padding: '3px 8px', borderRadius: '10px' }}>
           Space = Flip • ← → = Navigate
         </span>
       </div>
 
-      {/* 3D Flip Card Container matching Practice Page typography & rounded 24px cards */}
+      {/* Compact 3D Flip Card Container */}
       <div 
         className="perspective-1000"
-        style={{ height: '340px', cursor: 'pointer' }}
+        style={{ height: '240px', cursor: 'pointer' }}
         onClick={handleFlip}
       >
         <div 
@@ -78,8 +78,8 @@ export default function FlashcardViewer({ cards = [] }) {
             position: 'relative',
             width: '100%',
             height: '100%',
-            borderRadius: '24px',
-            boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.08)',
+            borderRadius: '20px',
+            boxShadow: '0 12px 24px -6px rgba(0, 0, 0, 0.08)',
             backgroundColor: '#ffffff',
             border: '1px solid #e2e8f0',
           }}
@@ -95,14 +95,14 @@ export default function FlashcardViewer({ cards = [] }) {
               flexDirection: 'column',
               alignItems: 'center',
               justify: 'center',
-              padding: '32px',
+              padding: '20px',
               boxSizing: 'border-box'
             }}
           >
-            <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', backgroundColor: '#e0e7ff', padding: '4px 12px', borderRadius: '12px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#6366f1', backgroundColor: '#e0e7ff', padding: '3px 10px', borderRadius: '10px', marginBottom: '8px' }}>
               {currentCard?.part_of_speech || currentCard?.partOfSpeech || 'Term'}
             </span>
-            <h2 style={{ fontSize: '2.4rem', fontWeight: 800, margin: '12px 0 20px', color: '#0f172a', textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.9rem', fontWeight: 800, margin: '6px 0 14px', color: '#0f172a', textAlign: 'center' }}>
               {currentCard?.term}
             </h2>
             <button 
@@ -110,7 +110,7 @@ export default function FlashcardViewer({ cards = [] }) {
               style={audioBtnStyle}
               title="Listen to pronunciation"
             >
-              <Volume2 size={22} />
+              <Volume2 size={20} />
             </button>
           </div>
 
@@ -125,18 +125,18 @@ export default function FlashcardViewer({ cards = [] }) {
               flexDirection: 'column',
               alignItems: 'center',
               justify: 'center',
-              padding: '32px',
+              padding: '20px',
               boxSizing: 'border-box',
               backgroundColor: '#f8fafc',
-              borderRadius: '24px',
+              borderRadius: '20px',
               border: '1px solid #e2e8f0',
             }}
           >
-            <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a', textAlign: 'center', margin: '0 0 16px 0' }}>
+            <p style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', textAlign: 'center', margin: '0 0 10px 0' }}>
               {formatChinesePinyin(currentCard?.definition)}
             </p>
             {(currentCard?.example_sentence || currentCard?.exampleSentence) && (
-              <p style={{ fontSize: '0.95rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', maxWidth: '500px', margin: 0 }}>
+              <p style={{ fontSize: '0.875rem', color: '#64748b', fontStyle: 'italic', textAlign: 'center', maxWidth: '460px', margin: 0 }}>
                 "{currentCard.example_sentence || currentCard.exampleSentence}"
               </p>
             )}
@@ -145,21 +145,21 @@ export default function FlashcardViewer({ cards = [] }) {
         </div>
       </div>
 
-      {/* Control Buttons matching Practice Page */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
+      {/* Control Buttons */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}>
         <button 
           onClick={handlePrev} 
           disabled={currentIndex === 0}
           style={navBtnStyle}
         >
-          <ChevronLeft size={20} />
+          <ChevronLeft size={18} />
         </button>
 
         <button 
           onClick={handleFlip} 
           style={flipBtnStyle}
         >
-          <RotateCw size={16} /> Flip Card
+          <RotateCw size={15} /> Flip Card
         </button>
 
         <button 
@@ -167,7 +167,7 @@ export default function FlashcardViewer({ cards = [] }) {
           disabled={currentIndex === cards.length - 1}
           style={navBtnStyle}
         >
-          <ChevronRight size={20} />
+          <ChevronRight size={18} />
         </button>
       </div>
 
