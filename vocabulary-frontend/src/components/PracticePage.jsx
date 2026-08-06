@@ -1155,6 +1155,14 @@ const timeStatCardStyle = {
   minWidth: '110px',
 };
 
+const inputContainerStyle = {
+  width: '100%',
+  maxWidth: '560px',
+  margin: '0 auto',
+  display: 'grid',
+  gap: '14px',
+};
+
 const nextBtnStyle = {
   padding: '12px 24px',
   borderRadius: '14px',
