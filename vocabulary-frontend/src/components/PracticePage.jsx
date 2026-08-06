@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useRef } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -11,6 +11,11 @@ import {
   Zap,
   HelpCircle,
   Hourglass,
+  Flame,
+  Lightbulb,
+  Keyboard,
+  Type,
+  ListFilter,
 } from 'lucide-react';
 
 const LearningStatus = {
@@ -75,6 +80,8 @@ function buildSessionQueue(cards) {
     id: card.id ?? `${card.term}-${card.definition}-${index}`,
     term: card.term || '',
     definition: card.definition || '',
+    partOfSpeech: card.partOfSpeech || card.part_of_speech || '',
+    exampleSentence: card.exampleSentence || card.example_sentence || '',
     status: LearningStatus.UNLEARNED,
     streak: 0,
     easeFactor: 2.5,
@@ -83,10 +90,6 @@ function buildSessionQueue(cards) {
     lastReviewedAt: null,
     isEngToVie: Math.random() > 0.5,
   }));
-}
-
-function getQuestionType() {
-  return QuestionType.MULTIPLE_CHOICE;
 }
 
 function getQuestionText(card) {
@@ -174,37 +177,34 @@ function reinsertCard(queue, currentId, updatedCard, stepsAhead = 3) {
   return remaining;
 }
 
-const SLOW_TIME_THRESHOLD_SECONDS = 7; // Time threshold in seconds for a slow response
+const SLOW_TIME_THRESHOLD_SECONDS = 7;
 
 export default function PracticePage({ setInfo, cards = [], onBack }) {
   const [sessionQueue, setSessionQueue] = useState(() => buildSessionQueue(cards));
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [practiceMode, setPracticeMode] = useState(QuestionType.MULTIPLE_CHOICE);
+
   const [inputValue, setInputValue] = useState('');
   const [selectedAnswer, setSelectedAnswer] = useState('');
   const [feedback, setFeedback] = useState(null);
   const [showCorrection, setShowCorrection] = useState(false);
   const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [showHint, setShowHint] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
 
   // Time & Analytics State
   const [questionStartTime, setQuestionStartTime] = useState(() => Date.now());
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [questionTimings, setQuestionTimings] = useState([]); // [{ term, definition, timeTaken, isCorrect, isSlow }]
+  const [questionTimings, setQuestionTimings] = useState([]);
   const [wrongCards, setWrongCards] = useState([]);
   const [slowCards, setSlowCards] = useState([]);
 
-  // Live Timer Interval
+  // Live Silent Timer for question start
   useEffect(() => {
     if (isFinished || !cards.length || feedback) return;
-
     setQuestionStartTime(Date.now());
-    setElapsedSeconds(0);
-
-    const timer = setInterval(() => {
-      setElapsedSeconds((prev) => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
+    setShowHint(false);
   }, [currentIndex, isFinished, feedback, cards.length]);
 
   useEffect(() => {
@@ -215,6 +215,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setFeedback(null);
     setShowCorrection(false);
     setScore(0);
+    setStreak(0);
+    setMaxStreak(0);
+    setShowHint(false);
     setIsFinished(false);
     setWrongCards([]);
     setSlowCards([]);
@@ -222,7 +225,6 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
   }, [cards]);
 
   const currentCard = sessionQueue[currentIndex] || null;
-  const questionType = getQuestionType(currentCard);
   const questionText = currentCard ? getQuestionText(currentCard) : '';
   const correctAnswer = currentCard ? getCorrectAnswer(currentCard) : '';
 
@@ -230,6 +232,33 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     if (!currentCard) return [];
     return buildOptions(cards.length > 0 ? cards : sessionQueue, currentCard);
   }, [currentCard?.id, currentCard?.isEngToVie, cards, sessionQueue]);
+
+  // Keyboard Shortcuts (1, 2, 3, 4 for options & Space for audio)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (isFinished || feedback) return;
+
+      // Don't intercept number keys if typing in text input
+      if (practiceMode === QuestionType.WRITTEN_INPUT) return;
+
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        playPronunciation(currentCard?.term || questionText);
+        return;
+      }
+
+      if (practiceMode === QuestionType.MULTIPLE_CHOICE && choices.length > 0) {
+        const num = parseInt(e.key, 10);
+        if (!isNaN(num) && num >= 1 && num <= choices.length) {
+          e.preventDefault();
+          handleChoice(choices[num - 1]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isFinished, feedback, practiceMode, choices, currentCard, questionText]);
 
   const completed = isFinished;
 
@@ -255,19 +284,13 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     }
   };
 
-  const handleContinue = () => {
-    setShowCorrection(false);
-    setFeedback(null);
-    setSelectedAnswer('');
-    setInputValue('');
-  };
-
   const processQuestionAnswer = (isCorrect, chosenText) => {
     if (!currentCard || feedback) return;
 
     const timeTaken = Math.max(1, Math.round((Date.now() - questionStartTime) / 1000));
     const isSlow = timeTaken >= SLOW_TIME_THRESHOLD_SECONDS;
     let newScore = score;
+    let newStreak = streak;
 
     const timingRecord = {
       term: currentCard.term,
@@ -296,9 +319,13 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     let feedbackMsg = '';
     if (isCorrect) {
       newScore = score + 1;
+      newStreak = streak + 1;
       setScore(newScore);
+      setStreak(newStreak);
+      if (newStreak > maxStreak) setMaxStreak(newStreak);
       feedbackMsg = '✓ Correct!';
     } else {
+      setStreak(0);
       feedbackMsg = `✗ Incorrect — correct answer: "${correctAnswer}"`;
     }
 
@@ -309,8 +336,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       message: feedbackMsg,
     });
 
-    // --- Adaptive Re-Queuing Logic ---
-    // If answer was wrong OR took too long (>7s), silently queue extra practice for this term!
+    // Silent Adaptive Re-Queuing:
+    // If answer was wrong OR took too long (>7s), queue extra practice for this term!
     let nextQueue = [...sessionQueue];
     if (!isCorrect || isSlow) {
       const extraPracticeCard = {
@@ -332,7 +359,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       } else {
         setCurrentIndex(nextIdx);
       }
-    }, 1200);
+    }, 1100);
   };
 
   const handleChoice = (choice) => {
@@ -348,6 +375,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       id: c.id ?? `${c.term}-${idx}`,
       term: c.term,
       definition: c.definition,
+      partOfSpeech: c.partOfSpeech || c.part_of_speech || '',
+      exampleSentence: c.exampleSentence || c.example_sentence || '',
       status: LearningStatus.UNLEARNED,
       streak: 0,
       easeFactor: 2.5,
@@ -364,6 +393,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setFeedback(null);
     setShowCorrection(false);
     setScore(0);
+    setStreak(0);
     setIsFinished(false);
     setWrongCards([]);
     setSlowCards([]);
@@ -405,7 +435,6 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     const hasWrongCards = wrongCards.length > 0;
     const hasSlowCards = slowCards.length > 0;
 
-    // Calculate time metrics
     const totalTimeTaken = questionTimings.reduce((sum, t) => sum + t.timeTaken, 0);
     const avgTimePerQuestion = questionTimings.length > 0 ? (totalTimeTaken / questionTimings.length).toFixed(1) : 0;
 
@@ -444,7 +473,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </div>
 
           {/* Percentage Circle & Stats */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', alignItems: 'center', margin: '16px 0' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', alignItems: 'center', margin: '16px 0', flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
               <div
                 style={{
@@ -474,7 +503,17 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                   {percentage}%
                 </div>
               </div>
-              <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Score</span>
+              <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: 600 }}>Accuracy</span>
+            </div>
+
+            {/* Streak Stat Card */}
+            <div style={timeStatCardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#f59e0b', fontWeight: 700, fontSize: '0.85rem' }}>
+                <Flame size={16} /> Max Streak
+              </div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>
+                {maxStreak} <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>in a row</span>
+              </div>
             </div>
 
             {/* Response Time Metric Card */}
@@ -485,7 +524,6 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
               <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#0f172a' }}>
                 {avgTimePerQuestion}s <span style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b' }}>/ ques</span>
               </div>
-              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Target: &lt; {SLOW_TIME_THRESHOLD_SECONDS}s</span>
             </div>
           </div>
 
@@ -510,7 +548,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           {hasSlowCards && (
             <div style={{ textAlign: 'left', width: '100%', marginTop: '12px' }}>
               <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: '0.9rem', color: '#d97706', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Hourglass size={16} /> Slow Recall Terms (&gt;{SLOW_TIME_THRESHOLD_SECONDS}s threshold):
+                <Hourglass size={16} /> Slow Recall Terms (&gt;{SLOW_TIME_THRESHOLD_SECONDS}s):
               </p>
               <div style={{ display: 'grid', gap: '6px' }}>
                 {slowCards.map((sc) => (
@@ -531,9 +569,6 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                       <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '8px' }}>{sc.term}</span>
                       <span style={{ color: '#64748b' }}>{sc.definition}</span>
                     </div>
-                    <span style={{ fontWeight: 700, color: '#d97706', fontSize: '0.8rem', backgroundColor: '#fef3c7', padding: '2px 8px', borderRadius: '12px' }}>
-                      ⏱️ {sc.timeTaken}s
-                    </span>
                   </div>
                 ))}
               </div>
@@ -601,49 +636,134 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     );
   }
 
-  // Timer Color State
-  const isTimerSlow = elapsedSeconds >= SLOW_TIME_THRESHOLD_SECONDS;
-  const isTimerWarning = elapsedSeconds >= 5 && elapsedSeconds < SLOW_TIME_THRESHOLD_SECONDS;
-  const timerBadgeBg = isTimerSlow ? '#fee2e2' : isTimerWarning ? '#fef3c7' : '#dcfce7';
-  const timerBadgeColor = isTimerSlow ? '#dc2626' : isTimerWarning ? '#d97706' : '#15803d';
+  const progressPct = Math.round(((currentIndex + 1) / sessionQueue.length) * 100);
 
   return (
     <div style={pageStyle}>
+      {/* Header Bar */}
       <div style={headerStyle}>
         <button onClick={onBack} style={backBtnStyle} aria-label="Back to Review">
           <ArrowLeft size={16} />
         </button>
-        <div>
-          <span style={eyebrowStyle}>Practice Mode</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={eyebrowStyle}>Practice Mode</span>
+            {streak > 1 && (
+              <span style={streakBadgeStyle}>
+                <Flame size={14} color="#f59e0b" /> {streak} Streak!
+              </span>
+            )}
+          </div>
           <h1 style={titleStyle}>{setInfo?.title || 'Vocabulary Practice'}</h1>
         </div>
       </div>
 
-      <div style={cardStyle}>
-        
-        {/* Question Header */}
-        <div style={questionMetaStyle}>
-          <span style={questionLabelStyle}>
-            Question {currentIndex + 1} of {sessionQueue.length}
-          </span>
-          <span style={questionTypeStyle}>Multiple Choice</span>
+      {/* Progress Bar & Practice Mode Switcher */}
+      <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', fontWeight: 700, color: '#475569' }}>
+          <span>Question {currentIndex + 1} of {sessionQueue.length}</span>
+          <span>{progressPct}% Complete</span>
         </div>
 
-        {/* Question Word */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '18px' }}>
+        {/* Animated Progress Bar */}
+        <div style={progressBarContainerStyle}>
+          <div style={{ ...progressBarFillStyle, width: `${progressPct}%` }} />
+        </div>
+
+        {/* Mode Switcher & Hotkey Banner */}
+        <div style={modeToolbarStyle}>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              type="button"
+              onClick={() => setPracticeMode(QuestionType.MULTIPLE_CHOICE)}
+              style={{
+                ...modeBtnStyle,
+                backgroundColor: practiceMode === QuestionType.MULTIPLE_CHOICE ? '#ffffff' : 'transparent',
+                color: practiceMode === QuestionType.MULTIPLE_CHOICE ? '#2563eb' : '#64748b',
+                boxShadow: practiceMode === QuestionType.MULTIPLE_CHOICE ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              }}
+            >
+              <ListFilter size={14} /> Multiple Choice
+            </button>
+            <button
+              type="button"
+              onClick={() => setPracticeMode(QuestionType.WRITTEN_INPUT)}
+              style={{
+                ...modeBtnStyle,
+                backgroundColor: practiceMode === QuestionType.WRITTEN_INPUT ? '#ffffff' : 'transparent',
+                color: practiceMode === QuestionType.WRITTEN_INPUT ? '#2563eb' : '#64748b',
+                boxShadow: practiceMode === QuestionType.WRITTEN_INPUT ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              }}
+            >
+              <Type size={14} /> Written Input
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.725rem', color: '#64748b' }}>
+            <Keyboard size={13} />
+            <span>Keys 1-4 for options • Space for Audio</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Question Card */}
+      <div style={cardStyle}>
+        
+        {/* Question Header & Hint */}
+        <div style={questionMetaStyle}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', backgroundColor: '#e0e7ff', padding: '3px 10px', borderRadius: '12px' }}>
+            {currentCard?.isEngToVie ? '🇬🇧 English → 🇻🇳 Definition' : '🇻🇳 Definition → 🇬🇧 English'}
+          </span>
+
+          <button
+            type="button"
+            onClick={() => setShowHint(!showHint)}
+            style={hintBtnStyle}
+            title="Reveal hint for this term"
+          >
+            <Lightbulb size={13} color="#ca8a04" /> Hint
+          </button>
+        </div>
+
+        {/* Question Word & Audio */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
           <div style={{ ...questionStyle, marginBottom: 0 }}>{questionText}</div>
           <button
             onClick={() => playPronunciation(currentCard?.term || questionText)}
             style={audioBtnStyle}
-            title="Listen to English pronunciation"
+            title="Listen to English pronunciation (Press Spacebar)"
             aria-label="Listen to English pronunciation"
           >
-            <Volume2 size={19} />
+            <Volume2 size={20} />
           </button>
         </div>
 
-        {/* Options */}
-        {questionType === QuestionType.MULTIPLE_CHOICE ? (
+        {/* Hint Box */}
+        {showHint && currentCard && (
+          <div style={hintBoxStyle}>
+            <Lightbulb size={16} color="#ca8a04" style={{ flexShrink: 0 }} />
+            <div>
+              {currentCard.partOfSpeech && (
+                <div style={{ fontWeight: 700, color: '#854d0e', fontSize: '0.8rem' }}>
+                  Part of Speech: {currentCard.partOfSpeech}
+                </div>
+              )}
+              {currentCard.exampleSentence && (
+                <div style={{ color: '#713f12', fontSize: '0.85rem', marginTop: '2px', italic: 'true' }}>
+                  "{currentCard.exampleSentence}"
+                </div>
+              )}
+              {!currentCard.partOfSpeech && !currentCard.exampleSentence && (
+                <div style={{ color: '#854d0e', fontSize: '0.8rem' }}>
+                  Starts with: "{correctAnswer.slice(0, 2)}..." ({correctAnswer.length} letters)
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Options / Input */}
+        {practiceMode === QuestionType.MULTIPLE_CHOICE ? (
           <div style={optionsGridStyle}>
             {choices.map((choice, index) => {
               const isSelected = feedback && choice === selectedAnswer;
@@ -653,6 +773,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
               const showAsWrong = isSelected && userWasWrong;
               const revealCorrect = !isSelected && isCorrectAnswer && userWasWrong;
               const highlighted = showAsCorrect || showAsWrong || revealCorrect;
+
               return (
                 <button
                   key={index}
@@ -672,21 +793,19 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                     opacity: feedback && !highlighted ? 0.5 : 1,
                   }}
                 >
-                  <span>{choice}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={hotkeyBadgeStyle}>[{index + 1}]</span>
+                    <span>{choice}</span>
+                  </div>
+
                   {showAsCorrect && (
-                    <span style={correctBadgeStyle}>
-                      Correct ✓
-                    </span>
+                    <span style={correctBadgeStyle}>Correct ✓</span>
                   )}
                   {showAsWrong && (
-                    <span style={wrongBadgeStyle}>
-                      Wrong ✗
-                    </span>
+                    <span style={wrongBadgeStyle}>Wrong ✗</span>
                   )}
                   {revealCorrect && (
-                    <span style={correctBadgeStyle}>
-                      Correct ✓
-                    </span>
+                    <span style={correctBadgeStyle}>Correct ✓</span>
                   )}
                 </button>
               );
@@ -704,8 +823,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                   handleWrittenSubmit();
                 }
               }}
-              placeholder="Enter your answer"
+              placeholder="Type your answer here..."
               style={inputStyle}
+              autoFocus
             />
             <button
               type="button"
@@ -713,7 +833,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
               disabled={!inputValue.trim() || Boolean(feedback)}
               style={nextBtnStyle}
             >
-              Submit Answer
+              Submit Answer (Enter)
             </button>
           </div>
         )}
@@ -723,20 +843,18 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           <div
             style={{
               ...feedbackStyle,
-              backgroundColor: feedback.isCorrect ? '#dcfce7' : feedback.isSlow ? '#fef3c7' : '#fee2e2',
-              border: feedback.isCorrect ? '1px solid #86efac' : feedback.isSlow ? '1px solid #fde047' : '1px solid #fecaca',
-              color: feedback.isCorrect ? '#15803d' : feedback.isSlow ? '#b45309' : '#991b1b',
-              fontWeight: 600,
+              backgroundColor: feedback.isCorrect ? '#dcfce7' : '#fee2e2',
+              border: feedback.isCorrect ? '1px solid #86efac' : '1px solid #fecaca',
+              color: feedback.isCorrect ? '#15803d' : '#991b1b',
+              fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              marginTop: '14px',
+              marginTop: '16px',
             }}
           >
             {feedback.isCorrect ? (
               <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
-            ) : feedback.isSlow ? (
-              <Hourglass size={18} style={{ flexShrink: 0 }} />
             ) : (
               <AlertCircle size={18} style={{ flexShrink: 0 }} />
             )}
@@ -764,7 +882,7 @@ const headerStyle = {
   display: 'flex',
   alignItems: 'center',
   gap: '14px',
-  marginBottom: '18px',
+  marginBottom: '16px',
 };
 
 const backBtnStyle = {
@@ -787,7 +905,19 @@ const eyebrowStyle = {
   color: '#2563eb',
   fontSize: '9px',
   fontWeight: 800,
-  marginBottom: '4px',
+  marginBottom: '2px',
+};
+
+const streakBadgeStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  backgroundColor: '#fef3c7',
+  color: '#d97706',
+  padding: '3px 10px',
+  borderRadius: '20px',
+  fontSize: '0.75rem',
+  fontWeight: 800,
 };
 
 const titleStyle = {
@@ -795,6 +925,45 @@ const titleStyle = {
   fontSize: '1.4rem',
   fontWeight: 800,
   color: '#0f172a',
+};
+
+const progressBarContainerStyle = {
+  width: '100%',
+  height: '8px',
+  backgroundColor: '#e2e8f0',
+  borderRadius: '10px',
+  overflow: 'hidden',
+};
+
+const progressBarFillStyle = {
+  height: '100%',
+  backgroundColor: '#2563eb',
+  borderRadius: '10px',
+  transition: 'width 0.3s ease-in-out',
+};
+
+const modeToolbarStyle = {
+  display: 'flex',
+  justify: 'space-between',
+  alignItems: 'center',
+  backgroundColor: '#f1f5f9',
+  padding: '4px 8px',
+  borderRadius: '12px',
+  flexWrap: 'wrap',
+  gap: '8px',
+};
+
+const modeBtnStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '6px 12px',
+  borderRadius: '8px',
+  border: 'none',
+  fontSize: '0.75rem',
+  fontWeight: 700,
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
 };
 
 const cardStyle = {
@@ -807,26 +976,36 @@ const cardStyle = {
 
 const questionMetaStyle = {
   display: 'flex',
-  justifyContent: 'space-between',
+  justify: 'space-between',
   alignItems: 'center',
   marginBottom: '16px',
   flexWrap: 'wrap',
   gap: '8px',
 };
 
-const questionLabelStyle = {
-  fontSize: '0.85rem',
-  fontWeight: 700,
-  color: '#64748b',
-};
-
-const questionTypeStyle = {
+const hintBtnStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  padding: '4px 10px',
+  borderRadius: '12px',
+  border: '1px solid #fef08a',
+  backgroundColor: '#fefce8',
+  color: '#854d0e',
   fontSize: '0.75rem',
   fontWeight: 700,
-  color: '#475569',
-  backgroundColor: '#f1f5f9',
-  padding: '3px 10px',
+  cursor: 'pointer',
+};
+
+const hintBoxStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  backgroundColor: '#fefce8',
+  border: '1px solid #fef08a',
   borderRadius: '12px',
+  padding: '10px 14px',
+  marginBottom: '16px',
 };
 
 const questionStyle = {
@@ -840,14 +1019,14 @@ const audioBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '38px',
-  height: '38px',
+  width: '40px',
+  height: '40px',
   borderRadius: '50%',
   border: '1px solid #cbd5e1',
-  backgroundColor: '#f8fafc',
+  backgroundColor: '#eff6ff',
   color: '#2563eb',
   cursor: 'pointer',
-  boxShadow: '0 2px 6px rgba(37,99,235,0.08)',
+  boxShadow: '0 2px 6px rgba(37,99,235,0.12)',
   transition: 'all 0.15s ease',
   flexShrink: 0,
 };
@@ -867,6 +1046,16 @@ const optionBtnStyle = {
   cursor: 'pointer',
   textAlign: 'left',
   transition: 'all 0.15s ease',
+};
+
+const hotkeyBadgeStyle = {
+  fontSize: '0.7rem',
+  fontWeight: 800,
+  color: '#64748b',
+  backgroundColor: '#f1f5f9',
+  padding: '2px 6px',
+  borderRadius: '6px',
+  border: '1px solid #cbd5e1',
 };
 
 const correctBadgeStyle = {
@@ -918,6 +1107,7 @@ const timeStatCardStyle = {
   flexDirection: 'column',
   alignItems: 'center',
   gap: '4px',
+  minWidth: '110px',
 };
 
 const nextBtnStyle = {
