@@ -13,6 +13,9 @@ import {
   AlertCircle,
   X,
   Loader2,
+  Layers,
+  FileCode,
+  Zap,
 } from 'lucide-react';
 import { formatChinesePinyin } from '../utils/pinyin';
 
@@ -218,9 +221,15 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
 
   const [termSuggestions, setTermSuggestions] = useState({});
   const [loading, setLoading] = useState(false);
+  const [translatingIndex, setTranslatingIndex] = useState(null);
   const [status, setStatus] = useState('');
   const [error, setError] = useState('');
   const [importStats, setImportStats] = useState(null);
+
+  // Bulk paste tab state
+  const [showBulkPaste, setShowBulkPaste] = useState(false);
+  const [bulkText, setBulkText] = useState('');
+
   const suggestionQueries = useRef({});
 
   const handleHeaderTermLangChange = (e) => {
@@ -399,6 +408,48 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
     }
   };
 
+  const handleAutoFillCard = async (index) => {
+    const card = cards[index];
+    const cleanTerm = stripPinyin(card?.term);
+    if (!cleanTerm) return;
+
+    setTranslatingIndex(index);
+    try {
+      const cTermLang = card.termLang || termLang || 'en';
+      const cDefLang = card.definitionLang || definitionLang || 'vi';
+
+      const detectedTermLang = (await autoDetectLanguage(cleanTerm)) || cTermLang;
+      const translatedDef = await translateToLanguage(cleanTerm, cDefLang, 'auto');
+      const simplifiedDef = simplifyDefinition(translatedDef);
+      const posFormatted = formatPosForLang(card.partOfSpeech || inferPartOfSpeech(cleanTerm), detectedTermLang);
+
+      let translatedEx = card.exampleSentence;
+      if (!card.exampleSentence && cleanTerm) {
+        const baseEx = generateExampleSentence(cleanTerm, card.partOfSpeech);
+        const rawEx = detectedTermLang === 'en' ? baseEx : await translateToLanguage(baseEx, detectedTermLang, 'auto');
+        translatedEx = stripPinyin(rawEx);
+      }
+
+      setCards((prev) => {
+        const updated = [...prev];
+        updated[index] = {
+          ...updated[index],
+          term: cleanTerm,
+          termLang: detectedTermLang,
+          definitionLang: cDefLang,
+          definition: simplifiedDef || updated[index].definition,
+          partOfSpeech: posFormatted || updated[index].partOfSpeech,
+          exampleSentence: translatedEx || updated[index].exampleSentence,
+        };
+        return updated;
+      });
+    } catch (err) {
+      console.error('Auto-fill error:', err);
+    } finally {
+      setTranslatingIndex(null);
+    }
+  };
+
   const applyTermSuggestion = async (index, suggestion) => {
     const current = cards[index] || {};
     const term = suggestion.term;
@@ -484,6 +535,67 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
     }
   };
 
+  const handleProcessBulkText = async () => {
+    if (!bulkText.trim()) return;
+    const lines = bulkText
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+
+    if (lines.length === 0) return;
+
+    setLoading(true);
+    setStatus(`Processing ${lines.length} bulk words...`);
+    try {
+      const newCards = await Promise.all(
+        lines.map(async (line) => {
+          let term = line;
+          let def = '';
+          if (line.includes('\t')) {
+            const parts = line.split('\t');
+            term = parts[0].trim();
+            def = parts.slice(1).join(' ').trim();
+          } else if (line.includes(' - ')) {
+            const parts = line.split(' - ');
+            term = parts[0].trim();
+            def = parts.slice(1).join(' ').trim();
+          }
+
+          const cleanTerm = stripPinyin(term);
+          const detectedTermLang = (await autoDetectLanguage(cleanTerm)) || termLang || 'en';
+          const translatedDef = def || (await translateToLanguage(cleanTerm, definitionLang, 'auto'));
+          const simplifiedDef = simplifyDefinition(translatedDef);
+          const posFormatted = formatPosForLang(inferPartOfSpeech(cleanTerm), detectedTermLang);
+          const baseEx = generateExampleSentence(cleanTerm, posFormatted);
+          const rawEx = detectedTermLang === 'en' ? baseEx : await translateToLanguage(baseEx, detectedTermLang, 'auto');
+
+          return {
+            term: cleanTerm,
+            definition: simplifiedDef || cleanTerm,
+            partOfSpeech: posFormatted,
+            exampleSentence: stripPinyin(rawEx),
+            termLang: detectedTermLang,
+            definitionLang: definitionLang,
+          };
+        })
+      );
+
+      setCards((prev) => {
+        const cleanedExisting = prev.filter((c) => c.term || c.definition);
+        return [...cleanedExisting, ...newCards];
+      });
+
+      setBulkText('');
+      setShowBulkPaste(false);
+      setStatus(`Successfully added ${newCards.length} cards from bulk text!`);
+    } catch (err) {
+      console.error('Bulk process error:', err);
+      setError('Failed to process bulk text.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addEmptyCard = () => {
     setCards([...cards, { term: '', definition: '', exampleSentence: '', partOfSpeech: '', termLang, definitionLang }]);
   };
@@ -493,7 +605,6 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
     setCards(cards.filter((_, i) => i !== index));
   };
 
-  // --- Handlers for File Upload (CSV & Excel) ---
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -569,7 +680,6 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
     setImportStats(`Successfully imported ${formattedCards.length} words from file!`);
   };
 
-  // --- Submit Everything to Backend ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!userId) {
@@ -630,14 +740,14 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
       <div style={modalContainerStyle}>
         
         {/* Modal Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', pb: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ backgroundColor: '#e0e7ff', color: '#4338ca', padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
-                <Sparkles size={12} style={{ marginRight: 4 }} /> New Vocabulary Set
+                <Sparkles size={12} style={{ marginRight: 4 }} /> Useful Vocabulary Creator
               </span>
             </div>
-            <h2 style={{ margin: '6px 0 0', fontSize: '1.4rem', color: '#0f172a', fontWeight: 800 }}>Create Vocabulary Set</h2>
+            <h2 style={{ margin: '6px 0 0', fontSize: '1.4rem', color: '#0f172a', fontWeight: 800 }}>Create New Vocabulary Set</h2>
           </div>
           <button onClick={onClose} style={closeBtnStyle} title="Close modal">
             <X size={20} />
@@ -657,29 +767,86 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
               required
             />
             <textarea
-              placeholder="Description (optional)"
+              placeholder="Description (optional context or study goal)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               style={{ ...inputStyle, height: '60px', resize: 'vertical' }}
             />
           </div>
 
-          {/* Import Dropzone Section & Global Language Toolbar */}
+          {/* Useful Quick Import & Language Toolbar */}
           <div style={{ display: 'grid', gap: '14px', marginBottom: '20px' }}>
             
-            <div style={dropzoneStyle}>
-              <Upload size={28} color="#3b82f6" />
-              <div style={{ marginLeft: '12px', textAlign: 'left', flex: 1 }}>
-                <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>Import Words from File</div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>Upload .csv, .tsv, or .xlsx (Auto-detects Term, Definition, Example headers)</div>
+            {/* Import Buttons Bar */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              
+              {/* File Dropzone Button */}
+              <div style={{ ...dropzoneStyle, flex: 2, minWidth: '240px' }}>
+                <Upload size={22} color="#2563eb" />
+                <div style={{ marginLeft: '10px', textAlign: 'left', flex: 1 }}>
+                  <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.85rem' }}>Import File (.csv, .xlsx, .tsv)</div>
+                  <div style={{ fontSize: '11px', color: '#64748b' }}>Auto-detects Term & Def headers</div>
+                </div>
+                <input
+                  type="file"
+                  accept=".csv, .tsv, .xlsx, .xls, .txt"
+                  onChange={handleFileUpload}
+                  style={fileInputStyle}
+                />
               </div>
-              <input
-                type="file"
-                accept=".csv, .tsv, .xlsx, .xls, .txt"
-                onChange={handleFileUpload}
-                style={fileInputStyle}
-              />
+
+              {/* Bulk Paste Toggle Button */}
+              <button
+                type="button"
+                onClick={() => setShowBulkPaste(!showBulkPaste)}
+                style={{
+                  ...bulkToggleBtnStyle,
+                  backgroundColor: showBulkPaste ? '#eff6ff' : '#f8fafc',
+                  borderColor: showBulkPaste ? '#3b82f6' : '#cbd5e1',
+                  color: showBulkPaste ? '#1d4ed8' : '#334155',
+                }}
+              >
+                <Zap size={18} color={showBulkPaste ? '#2563eb' : '#64748b'} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>⚡ Bulk Paste Words</div>
+                  <div style={{ fontSize: '11px', opacity: 0.8 }}>Paste word list line-by-line</div>
+                </div>
+              </button>
             </div>
+
+            {/* Bulk Text Textarea Dropdown */}
+            {showBulkPaste && (
+              <div style={bulkBoxStyle}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b' }}>
+                    Paste your list of words below (one word per line, or "term - definition"):
+                  </span>
+                  <button type="button" onClick={() => setShowBulkPaste(false)} style={iconBtnStyle}>
+                    <X size={14} />
+                  </button>
+                </div>
+                <textarea
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                  placeholder={`abundant\nconcept\nacquire\neffortless - dễ dàng`}
+                  rows={5}
+                  style={bulkTextareaStyle}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
+                  <button type="button" onClick={() => setBulkText('')} style={cancelBtnStyle}>
+                    Clear
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleProcessBulkText}
+                    disabled={loading || !bulkText.trim()}
+                    style={saveBtnStyle}
+                  >
+                    {loading ? 'Processing...' : '⚡ Convert to Cards & Auto-Translate'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {importStats && (
               <div style={badgeStyle}>
@@ -755,6 +922,9 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b', fontWeight: 700 }}>
               Word Cards ({cards.length})
             </h3>
+            <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+              {cards.filter((c) => c.term && c.definition).length} / {cards.length} cards complete
+            </span>
           </div>
 
           <div style={{ maxHeight: '540px', overflowY: 'auto', paddingRight: '8px', paddingBottom: '160px', display: 'grid', gap: '14px' }}>
@@ -773,6 +943,21 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoFillCard(index)}
+                      disabled={translatingIndex === index || !card.term}
+                      style={autoFillBtnStyle}
+                      title="Auto-fill definition, POS, and example sentence for this word"
+                    >
+                      {translatingIndex === index ? (
+                        <Loader2 size={12} className="spin" />
+                      ) : (
+                        <Wand2 size={12} />
+                      )}
+                      Fill Card
+                    </button>
+
                     <div style={cardLangBoxStyle} title="Languages for this card">
                       <select
                         value={card.termLang || termLang}
@@ -928,7 +1113,7 @@ const modalOverlayStyle = {
   backgroundColor: 'rgba(15, 23, 42, 0.75)',
   backdropFilter: 'blur(4px)',
   display: 'flex',
-  justify: 'center',
+  justifyContent: 'center',
   alignItems: 'center',
   zIndex: 1000,
 };
@@ -959,12 +1144,44 @@ const dropzoneStyle = {
   position: 'relative',
   border: '2px dashed #93c5fd',
   backgroundColor: '#eff6ff',
-  borderRadius: '14px',
-  padding: '16px 20px',
+  borderRadius: '12px',
+  padding: '12px 16px',
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
   transition: 'border-color 0.2s ease',
+};
+
+const bulkToggleBtnStyle = {
+  flex: 1,
+  minWidth: '200px',
+  padding: '12px 16px',
+  borderRadius: '12px',
+  border: '1px solid #cbd5e1',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+};
+
+const bulkBoxStyle = {
+  backgroundColor: '#f8fafc',
+  border: '1px solid #cbd5e1',
+  borderRadius: '14px',
+  padding: '16px',
+};
+
+const bulkTextareaStyle = {
+  width: '100%',
+  padding: '12px',
+  borderRadius: '10px',
+  border: '1px solid #cbd5e1',
+  fontSize: '13px',
+  fontFamily: 'monospace',
+  boxSizing: 'border-box',
+  outline: 'none',
+  resize: 'vertical',
 };
 
 const fileInputStyle = {
@@ -1033,6 +1250,20 @@ const translateAllBtnStyle = {
   fontSize: '0.8rem',
   cursor: 'pointer',
   transition: 'all 0.2s ease',
+};
+
+const autoFillBtnStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '4px',
+  padding: '3px 8px',
+  borderRadius: '6px',
+  border: '1px solid #c7d2fe',
+  backgroundColor: '#eef2ff',
+  color: '#4338ca',
+  fontSize: '0.7rem',
+  fontWeight: 700,
+  cursor: 'pointer',
 };
 
 const cardRowContainerStyle = {
