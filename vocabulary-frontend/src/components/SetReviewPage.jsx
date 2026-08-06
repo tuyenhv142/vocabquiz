@@ -895,20 +895,24 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
 
   return (
     <div style={pageStyle}>
-      {/* Header Banner */}
-      <div style={pageHeaderStyle}>
-        <div>
-          <div style={headerTagGroupStyle}>
-            <span style={tagStyle}>
-              <Tag size={12} style={{ marginRight: 4 }} /> Edit Set
-            </span>
+      {/* Top Header Bar matching PracticePage & FlashcardPage */}
+      <div style={headerStyle}>
+        <button onClick={onClose} style={backBtnStyle} aria-label="Back to Set">
+          <ArrowLeft size={16} />
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={eyebrowStyle}>Edit Set</span>
             <span style={countBadgeStyle}>
               <Layers size={12} style={{ marginRight: 4 }} /> {editCards.length} {editCards.length === 1 ? 'Word' : 'Words'}
             </span>
           </div>
-          <h1 style={pageTitleStyle}>{setInfo?.title || 'Study Set'}</h1>
+          <h1 style={titleStyle}>{setInfo?.title || 'Study Set'}</h1>
         </div>
+      </div>
 
+      {/* Action Toolbar */}
+      <div style={pageHeaderStyle}>
         <div style={pageActionsStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
             <div style={langSelectorBoxStyle} title="Select language of terms (words)">
@@ -951,9 +955,6 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
             title="Auto-translate all cards to selected definition language"
           >
             <Wand2 size={14} /> Translate All
-          </button>
-          <button onClick={onClose} type="button" style={ghostBtnStyle}>
-            <ArrowLeft size={16} /> Back
           </button>
           <button onClick={deleteSet} type="button" style={deleteBtnActionStyle}>
             <Trash2 size={16} /> Delete Set
@@ -1151,9 +1152,48 @@ const pageStyle = {
   margin: '0 auto',
 };
 
+const headerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '14px',
+  marginBottom: '16px',
+};
+
+const backBtnStyle = {
+  width: '40px',
+  height: '40px',
+  borderRadius: '14px',
+  border: '1px solid rgba(148,163,184,0.18)',
+  backgroundColor: '#ffffff',
+  color: '#334155',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+  flexShrink: 0,
+};
+
+const eyebrowStyle = {
+  display: 'inline-block',
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  color: '#2563eb',
+  fontSize: '9px',
+  fontWeight: 800,
+  marginBottom: '2px',
+};
+
+const titleStyle = {
+  margin: 0,
+  fontSize: '1.4rem',
+  fontWeight: 800,
+  color: '#0f172a',
+};
+
 const pageHeaderStyle = {
   display: 'flex',
-  justifyContent: 'space-between',
+  justify: 'space-between',
   gap: '16px',
   alignItems: 'center',
   marginBottom: '20px',
