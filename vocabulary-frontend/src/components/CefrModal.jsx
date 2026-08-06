@@ -130,11 +130,13 @@ const overlayStyle = {
 
 const modalStyle = {
   backgroundColor: '#ffffff',
-  borderRadius: '20px',
-  width: '100%', maxWidth: '620px',
-  padding: '24px',
-  boxShadow: '0 20px 40px rgba(15, 23, 42, 0.2)',
+  borderRadius: '24px',
+  width: '100%', maxWidth: '640px',
+  padding: '32px',
+  boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
   boxSizing: 'border-box',
+  fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+  border: '1px solid #e2e8f0',
 };
 
 const headerStyle = {
@@ -148,12 +150,12 @@ const subtitleStyle = {
 
 const closeBtnStyle = {
   background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8',
-  padding: '6px', borderRadius: '8px', display: 'flex', alignItems: 'center',
+  padding: '6px', borderRadius: '10px', display: 'flex', alignItems: 'center',
 };
 
 const toggleAllBtnStyle = {
   background: 'none', border: 'none', cursor: 'pointer', color: '#2563eb',
-  fontSize: '13px', fontWeight: 600, padding: 0,
+  fontSize: '0.85rem', fontWeight: 800, padding: 0,
 };
 
 const gridStyle = {
@@ -162,13 +164,13 @@ const gridStyle = {
 };
 
 const cardStyle = {
-  padding: '14px', borderRadius: '14px', border: '1px solid #e2e8f0',
+  padding: '16px', borderRadius: '18px', border: '1px solid #e2e8f0',
   cursor: 'pointer', transition: 'all 0.15s ease',
 };
 
 const badgeStyle = {
-  color: '#ffffff', fontSize: '11px', fontWeight: 800, padding: '3px 7px',
-  borderRadius: '6px', textTransform: 'uppercase', letterSpacing: '0.05em',
+  color: '#ffffff', fontSize: '11px', fontWeight: 800, padding: '3px 8px',
+  borderRadius: '8px', textTransform: 'uppercase', letterSpacing: '0.05em',
 };
 
 const footerStyle = {
@@ -177,11 +179,13 @@ const footerStyle = {
 };
 
 const cancelBtnStyle = {
-  padding: '10px 18px', backgroundColor: '#f1f5f9', color: '#475569',
-  border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 600,
+  padding: '12px 20px', backgroundColor: '#ffffff', color: '#475569',
+  border: '1px solid #cbd5e1', borderRadius: '14px', cursor: 'pointer', fontWeight: 700,
+  fontSize: '0.9rem',
 };
 
 const submitBtnStyle = {
-  padding: '10px 20px', backgroundColor: '#2563eb', color: '#ffffff',
-  border: 'none', borderRadius: '10px', cursor: 'pointer', fontWeight: 700,
+  padding: '12px 24px', backgroundColor: '#2563eb', color: '#ffffff',
+  border: 'none', borderRadius: '14px', cursor: 'pointer', fontWeight: 800,
+  fontSize: '0.9rem', boxShadow: '0 4px 14px rgba(37,99,235,0.2)',
 };

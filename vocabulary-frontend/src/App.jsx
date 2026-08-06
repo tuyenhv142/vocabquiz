@@ -6,6 +6,7 @@ import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import logoImg from './assets/logo.jpg';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck } from 'lucide-react';
 
 const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
   ? 'http://localhost:5000'
@@ -62,7 +63,6 @@ export default function App() {
     }
   };
 
-  // Check LocalStorage on initial load
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
     if (savedUser) {
@@ -105,7 +105,7 @@ export default function App() {
 
   const handleAuthSuccess = async (loggedUser, isSignup = false) => {
     setUser(loggedUser);
-    const loadedSets = await loadUserSets(loggedUser.id);
+    await loadUserSets(loggedUser.id);
     if (isSignup) {
       setIsCefrOpen(true);
       setIsNewUserSignup(true);
@@ -196,45 +196,48 @@ export default function App() {
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: '1000px', boxSizing: 'border-box', padding: '30px', fontFamily: 'sans-serif', margin: '0 auto' }}>
+    <div style={pageStyle}>
 
       {/* Top Navigation Bar */}
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', paddingBottom: '20px', borderBottom: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <header style={headerStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <img
             src={logoImg}
             alt="VocabQuiz Logo"
-            style={{ width: '44px', height: '44px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+            style={{ width: '48px', height: '48px', borderRadius: '16px', objectFit: 'cover', boxShadow: '0 6px 16px rgba(0,0,0,0.08)' }}
           />
           <div>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#0f172a' }}>VocabQuizWithNil</h1>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#64748b' }}>Create, review, and edit your word sets</p>
+            <span style={eyebrowStyle}>Vocabulary Master</span>
+            <h1 style={titleStyle}>VocabQuizWithNil</h1>
           </div>
         </div>
 
         <div>
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <span style={{ fontSize: '14px', color: '#475569' }}>{user.email}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={userBadgeStyle}>
+                <UserCheck size={14} color="#2563eb" /> {user.email}
+              </span>
 
               <button
                 onClick={handleLogout}
-                style={{ padding: '8px 14px', backgroundColor: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                style={secondaryBtnStyle}
+                title="Log Out"
               >
-                Log Out
+                <LogOut size={15} /> Log Out
               </button>
               <button
                 onClick={handleDeleteAccount}
-                style={{ padding: '8px 14px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', fontWeight: '600' }}
-                title="Permanently delete your account and all your vocabulary sets"
+                style={dangerBtnStyle}
+                title="Permanently delete your account"
               >
-                Delete Account
+                <Trash2 size={15} /> Delete Account
               </button>
             </div>
           ) : (
             <button
               onClick={() => setIsAuthOpen(true)}
-              style={{ padding: '10px 20px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={primaryBtnStyle}
             >
               Log In / Sign Up
             </button>
@@ -245,12 +248,15 @@ export default function App() {
       {/* Main Content Area */}
       <main>
         {!user ? (
-          <div style={{ textAlign: 'center', padding: '60px 20px', backgroundColor: '#f8fafc', borderRadius: '16px' }}>
-            <h2>Welcome to VocabQuizWithNil</h2>
-            <p style={{ color: '#64748b' }}>Log in to create vocabulary sets, import CSV word lists, and track your study progress.</p>
+          <div style={welcomeCardStyle}>
+            <Sparkles size={36} color="#2563eb" style={{ marginBottom: '12px' }} />
+            <h2 style={{ margin: '0 0 8px', fontSize: '1.6rem', fontWeight: 800, color: '#0f172a' }}>Welcome to VocabQuizWithNil</h2>
+            <p style={{ color: '#64748b', fontSize: '0.95rem', margin: '0 0 20px', maxWidth: '500px' }}>
+              Create custom vocabulary sets, auto-translate terms with AI, and master words with fast adaptive practice!
+            </p>
             <button
               onClick={() => setIsAuthOpen(true)}
-              style={{ marginTop: '16px', padding: '12px 24px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+              style={{ ...primaryBtnStyle, padding: '14px 28px', fontSize: '1rem' }}
             >
               Get Started
             </button>
@@ -281,89 +287,94 @@ export default function App() {
           )
         ) : (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
-                <h4 style={{ margin: 0 }}>Your Vocabulary Sets</h4>
-                <p style={{ margin: '6px 0 0', color: '#64748b' }}>{sets.length} set{sets.length === 1 ? '' : 's'} saved to your account.</p>
+                <span style={eyebrowStyle}>Your Dashboard</span>
+                <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>Your Vocabulary Sets</h2>
+                <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.85rem' }}>{sets.length} set{sets.length === 1 ? '' : 's'} saved in your account.</p>
               </div>
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={openCefrModal}
-                  style={{ padding: '10px 16px', backgroundColor: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+                  style={secondaryBtnStyle}
                   title="Browse official CEFR English Vocabulary Sets (A1 to C2)"
                 >
-                  🎁 Browse CEFR Sets (A1 - C2)
+                  <BookOpen size={16} /> Browse CEFR Sets (A1-C2)
                 </button>
                 <button
                   onClick={() => setIsCreateOpen(true)}
-                  style={{ padding: '10px 16px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+                  style={primaryBtnStyle}
                 >
-                  + New Set
+                  <Plus size={16} /> New Set
                 </button>
               </div>
             </div>
 
-              {loadingSets ? (
-                <div style={{ padding: '20px', textAlign: 'center', color: '#64748b' }}>Loading your sets...</div>
-              ) : sets.length === 0 ? (
-                <div style={{ padding: '24px', borderRadius: '16px', backgroundColor: '#f8fafc', color: '#475569' }}>
-                  You don't have any sets yet. Click "New Set" to save your first vocabulary list.
-                </div>
-              ) : (
-                <div style={{ display: 'grid', gap: '16px' }}>
-                  {sets.map((set) => {
-                    const pct = set.practice_percentage;
-                    const hasPracticed = pct != null;
-                    let pctColor = '#64748b';
-                    if (hasPracticed) {
-                      if (pct >= 90) pctColor = '#15803d';
-                      else if (pct >= 70) pctColor = '#ca8a04';
-                      else if (pct >= 50) pctColor = '#ea580c';
-                      else pctColor = '#dc2626';
-                    }
-                    return (
-                      <div key={set.id} style={{ padding: '10px', borderRadius: '16px', border: '1px solid #e2e8f0', backgroundColor: '#ffffff', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
-                            <h4 style={{ margin: '0' }}>{set.title}</h4>
-                            {hasPracticed && (
-                              <span style={{
-                                display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                padding: '2px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 700,
-                                backgroundColor: `${pctColor}14`, color: pctColor, border: `1px solid ${pctColor}30`,
-                              }}>
-                                {pct}%
-                              </span>
-                            )}
-                          </div>
-                          {/* <p style={{ margin: '6px 0 0', color: '#64748b' }}>{set.description || 'No description yet'}</p> */}
-                          <div style={{ display: 'flex', gap: '12px', marginTop: '10px', flexWrap: 'wrap' }}>
-                            <small style={{ color: '#94a3b8' }}>{set.card_count} word{set.card_count === 1 ? '' : 's'}</small>
-                            {hasPracticed && set.last_practiced && (
-                              <small style={{ color: '#94a3b8' }}>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</small>
-                            )}
-                          </div>
+            {loadingSets ? (
+              <div style={cardContainerStyle}>
+                <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Loading your sets...</div>
+              </div>
+            ) : sets.length === 0 ? (
+              <div style={{ ...welcomeCardStyle, padding: '40px 20px' }}>
+                <BookOpen size={32} color="#94a3b8" style={{ marginBottom: '10px' }} />
+                <p style={{ color: '#475569', fontWeight: 600, margin: 0 }}>
+                  You don't have any sets yet. Click <strong>"+ New Set"</strong> or <strong>"Browse CEFR Sets"</strong> to get started!
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '14px' }}>
+                {sets.map((set) => {
+                  const pct = set.practice_percentage;
+                  const hasPracticed = pct != null;
+                  let pctColor = '#64748b';
+                  if (hasPracticed) {
+                    if (pct >= 90) pctColor = '#15803d';
+                    else if (pct >= 70) pctColor = '#ca8a04';
+                    else if (pct >= 50) pctColor = '#ea580c';
+                    else pctColor = '#dc2626';
+                  }
+                  return (
+                    <div key={set.id} style={setCardStyle}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>{set.title}</h3>
+                          {hasPracticed && (
+                            <span style={{
+                              display: 'inline-flex', alignItems: 'center', gap: '4px',
+                              padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
+                              backgroundColor: `${pctColor}14`, color: pctColor, border: `1px solid ${pctColor}30`,
+                            }}>
+                              {pct}% Mastered
+                            </span>
+                          )}
                         </div>
-                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                          <button
-                            onClick={() => loadSetDetails(set.id)}
-                            style={{ padding: '10px 16px', backgroundColor: '#0f172a', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
-                          >
-                            Review
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteSet(set.id, set.title, e)}
-                            style={{ padding: '10px 14px', backgroundColor: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
-                            title="Delete this vocabulary set"
-                          >
-                            Delete
-                          </button>
+                        <div style={{ display: 'flex', gap: '14px', marginTop: '6px', flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748b' }}>
+                          <span><strong>{set.card_count}</strong> word{set.card_count === 1 ? '' : 's'}</span>
+                          {hasPracticed && set.last_practiced && (
+                            <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
+                          )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        <button
+                          onClick={() => loadSetDetails(set.id)}
+                          style={{ ...primaryBtnStyle, padding: '10px 18px' }}
+                        >
+                          Review & Practice
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteSet(set.id, set.title, e)}
+                          style={dangerBtnStyle}
+                          title="Delete this vocabulary set"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -395,3 +406,136 @@ export default function App() {
     </div>
   );
 }
+
+// --- Styles matching Practice Page design system ---
+const pageStyle = {
+  width: '100%',
+  boxSizing: 'border-box',
+  padding: '18px',
+  fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+  maxWidth: '1000px',
+  margin: '0 auto',
+  color: '#0f172a',
+  background: '#f8fafc',
+};
+
+const headerStyle = {
+  display: 'flex',
+  justify: 'space-between',
+  alignItems: 'center',
+  marginBottom: '28px',
+  paddingBottom: '18px',
+  borderBottom: '1px solid #e2e8f0',
+  flexWrap: 'wrap',
+  gap: '16px',
+};
+
+const eyebrowStyle = {
+  display: 'inline-block',
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  color: '#2563eb',
+  fontSize: '9px',
+  fontWeight: 800,
+  marginBottom: '2px',
+};
+
+const titleStyle = {
+  margin: 0,
+  fontSize: '1.4rem',
+  fontWeight: 800,
+  color: '#0f172a',
+};
+
+const primaryBtnStyle = {
+  padding: '12px 20px',
+  borderRadius: '14px',
+  border: 'none',
+  backgroundColor: '#2563eb',
+  color: '#ffffff',
+  fontSize: '0.9rem',
+  fontWeight: 700,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  boxShadow: '0 4px 14px rgba(37,99,235,0.2)',
+  transition: 'all 0.15s ease',
+};
+
+const secondaryBtnStyle = {
+  padding: '12px 18px',
+  borderRadius: '14px',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#ffffff',
+  color: '#334155',
+  fontSize: '0.85rem',
+  fontWeight: 700,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+  transition: 'all 0.15s ease',
+};
+
+const dangerBtnStyle = {
+  padding: '12px 16px',
+  borderRadius: '14px',
+  border: '1px solid #fecaca',
+  backgroundColor: '#fef2f2',
+  color: '#dc2626',
+  fontSize: '0.85rem',
+  fontWeight: 700,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  transition: 'all 0.15s ease',
+};
+
+const userBadgeStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '8px 14px',
+  borderRadius: '20px',
+  backgroundColor: '#eff6ff',
+  color: '#1e40af',
+  fontSize: '0.825rem',
+  fontWeight: 700,
+  border: '1px solid #bfdbfe',
+};
+
+const welcomeCardStyle = {
+  backgroundColor: '#ffffff',
+  borderRadius: '24px',
+  padding: '48px 28px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const cardContainerStyle = {
+  backgroundColor: '#ffffff',
+  borderRadius: '24px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
+};
+
+const setCardStyle = {
+  padding: '20px 24px',
+  borderRadius: '20px',
+  border: '1px solid #e2e8f0',
+  backgroundColor: '#ffffff',
+  display: 'flex',
+  justify: 'space-between',
+  alignItems: 'center',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+  flexWrap: 'wrap',
+  gap: '12px',
+};

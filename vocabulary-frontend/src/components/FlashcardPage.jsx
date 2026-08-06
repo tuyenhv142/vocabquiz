@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Edit3, Play } from 'lucide-react';
+import { ArrowLeft, Edit3, Play, BookOpen } from 'lucide-react';
 import FlashcardViewer from './FlashcardViewer';
 
 export default function FlashcardPage({ setInfo, cards = [], onBack, onEdit, onPractice }) {
@@ -15,52 +15,50 @@ export default function FlashcardPage({ setInfo, cards = [], onBack, onEdit, onP
 
   return (
     <div style={pageStyle}>
-      <div style={topRowStyle}>
-        <div>
-          <span style={eyebrowStyle}>Flashcard Review</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <h1 style={titleStyle}>{setInfo.title}</h1>
+      {/* Header Bar matching Practice Page */}
+      <div style={headerStyle}>
+        <button onClick={onBack} style={backBtnStyle} aria-label="Back to Sets">
+          <ArrowLeft size={16} />
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={eyebrowStyle}>Flashcard Study</span>
             {hasPracticed && (
               <span style={{
                 display: 'inline-flex', alignItems: 'center', gap: '4px',
-                padding: '3px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 700,
+                padding: '4px 12px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
                 backgroundColor: `${pctColor}14`, color: pctColor, border: `1px solid ${pctColor}30`,
               }}>
-                {pct}% mastered
+                {pct}% Mastered
               </span>
             )}
           </div>
-          {hasPracticed && setInfo.last_practiced && (
-            <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
-              Last practiced: {new Date(setInfo.last_practiced).toLocaleDateString()}
-            </p>
-          )}
-        </div>
-
-        <div style={actionsRowStyle}>
-          <button onClick={onBack} style={iconBtnStyle} aria-label="Back to Sets">
-            <ArrowLeft size={18} />
-          </button>
-          <button onClick={onPractice} style={iconBtnStyle} aria-label="Practice Words">
-            <Play size={18} />
-          </button>
-          <button onClick={onEdit} style={iconBtnStyle} aria-label="Edit Words">
-            <Edit3 size={18} />
-          </button>
+          <h1 style={titleStyle}>{setInfo?.title || 'Flashcard Viewer'}</h1>
         </div>
       </div>
 
-      <div style={viewerContainerStyle}>
+      {/* Main Flashcard Card Container matching Practice Page cardStyle */}
+      <div style={cardStyle}>
+        <div style={actionToolbarStyle}>
+          <button onClick={onPractice} style={primaryBtnStyle}>
+            <Play size={16} /> Start Practice Quiz
+          </button>
+          <button onClick={onEdit} style={secondaryBtnStyle}>
+            <Edit3 size={16} /> Edit Vocabulary Cards
+          </button>
+        </div>
+
         <FlashcardViewer cards={cards} />
       </div>
     </div>
   );
 }
 
+// --- Styles matching Practice Page design system ---
 const pageStyle = {
   width: '100%',
   boxSizing: 'border-box',
-  padding: '12px',
+  padding: '18px',
   fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
   maxWidth: '1000px',
   margin: '0 auto',
@@ -68,109 +66,14 @@ const pageStyle = {
   background: '#f8fafc',
 };
 
-const topRowStyle = {
+const headerStyle = {
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
   gap: '14px',
-  marginBottom: '10px',
+  marginBottom: '20px',
 };
 
-const headerCardStyle = {
-  display: 'grid',
-  gridTemplateColumns: '1fr auto',
-  gap: '12px',
-  padding: '10px 12px',
-  borderRadius: '18px',
-  background: 'rgba(255,255,255,0.98)',
-  border: '1px solid rgba(148,163,184,0.16)',
-  boxShadow: '0 10px 22px rgba(15,23,42,0.06)',
-  alignItems: 'center',
-};
-
-const eyebrowStyle = {
-  display: 'inline-block',
-  letterSpacing: '0.18em',
-  textTransform: 'uppercase',
-  color: '#2563eb',
-  fontSize: '8px',
-  fontWeight: 700,
-  marginBottom: '4px',
-};
-
-const titleStyle = {
-  margin: 0,
-  fontSize: '1.2rem',
-  lineHeight: 1.16,
-  letterSpacing: '-0.02em',
-};
-
-const descriptionStyle = {
-  margin: '6px 0 0',
-  color: '#475569',
-  maxWidth: '620px',
-  fontSize: '0.85rem',
-  lineHeight: 1.4,
-};
-
-const statsCardStyle = {
-  minWidth: '100px',
-  padding: '10px 12px',
-  background: 'linear-gradient(180deg, #eff6ff 0%, #ffffff 100%)',
-  borderRadius: '14px',
-  boxShadow: '0 8px 18px rgba(15,23,42,0.06)',
-  textAlign: 'center',
-};
-
-const statsLabelStyle = {
-  display: 'block',
-  color: '#334155',
-  fontSize: '0.72rem',
-  marginBottom: '4px',
-  textTransform: 'uppercase',
-  letterSpacing: '0.12em',
-};
-
-const statsValueStyle = {
-  margin: 0,
-  fontSize: '1.35rem',
-  color: '#0f172a',
-};
-
-const actionsRowStyle = {
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: '10px',
-  marginTop: '10px',
-  marginBottom: '10px',
-  alignItems: 'center',
-};
-
-const buttonBase = {
-  borderRadius: '14px',
-  padding: '10px 16px',
-  border: 'none',
-  fontSize: '0.88rem',
-  fontWeight: 700,
-  cursor: 'pointer',
-  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-};
-
-const primaryBtnStyle = {
-  ...buttonBase,
-  backgroundColor: '#2563eb',
-  color: '#ffffff',
-  boxShadow: '0 10px 20px rgba(37,99,235,0.15)',
-};
-
-const secondaryBtnStyle = {
-  ...buttonBase,
-  backgroundColor: '#f8fafc',
-  color: '#334155',
-  boxShadow: '0 8px 16px rgba(15,23,42,0.08)',
-};
-
-const iconBtnStyle = {
+const backBtnStyle = {
   width: '40px',
   height: '40px',
   borderRadius: '14px',
@@ -181,14 +84,67 @@ const iconBtnStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   cursor: 'pointer',
-  boxShadow: '0 10px 18px rgba(15,23,42,0.06)',
-  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+  boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
 };
 
-const viewerContainerStyle = {
-  marginTop: '10px',
-  padding: '18px',
-  borderRadius: '22px',
-  background: 'radial-gradient(circle at top right, rgba(59,130,246,0.1), transparent 40%), #ffffff',
-  border: '1px solid rgba(148,163,184,0.18)',
+const eyebrowStyle = {
+  display: 'inline-block',
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  color: '#2563eb',
+  fontSize: '9px',
+  fontWeight: 800,
+  marginBottom: '2px',
+};
+
+const titleStyle = {
+  margin: 0,
+  fontSize: '1.4rem',
+  fontWeight: 800,
+  color: '#0f172a',
+};
+
+const cardStyle = {
+  backgroundColor: '#ffffff',
+  borderRadius: '24px',
+  padding: '28px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
+};
+
+const actionToolbarStyle = {
+  display: 'flex',
+  justify: 'center',
+  gap: '12px',
+  marginBottom: '24px',
+  flexWrap: 'wrap',
+};
+
+const primaryBtnStyle = {
+  padding: '12px 24px',
+  borderRadius: '14px',
+  border: 'none',
+  backgroundColor: '#2563eb',
+  color: '#ffffff',
+  fontSize: '0.9rem',
+  fontWeight: 700,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  boxShadow: '0 4px 14px rgba(37,99,235,0.2)',
+};
+
+const secondaryBtnStyle = {
+  padding: '12px 20px',
+  borderRadius: '14px',
+  border: '1px solid #cbd5e1',
+  backgroundColor: '#ffffff',
+  color: '#334155',
+  fontSize: '0.9rem',
+  fontWeight: 700,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
 };

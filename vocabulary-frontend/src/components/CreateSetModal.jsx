@@ -1120,32 +1120,35 @@ const modalOverlayStyle = {
 
 const modalContainerStyle = {
   backgroundColor: '#ffffff',
-  borderRadius: '20px',
-  padding: '28px',
+  borderRadius: '24px',
+  padding: '32px',
   width: '92%',
   maxWidth: '960px',
   maxHeight: '90vh',
   overflowY: 'auto',
   boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+  fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
+  border: '1px solid #e2e8f0',
 };
 
 const inputStyle = {
   width: '100%',
   padding: '12px 14px',
-  borderRadius: '10px',
-  border: '1px solid #cbd5e1',
-  fontSize: '14px',
+  borderRadius: '14px',
+  border: '1.5px solid #cbd5e1',
+  fontSize: '0.95rem',
   boxSizing: 'border-box',
   outline: 'none',
   fontFamily: 'inherit',
+  color: '#0f172a',
 };
 
 const dropzoneStyle = {
   position: 'relative',
   border: '2px dashed #93c5fd',
   backgroundColor: '#eff6ff',
-  borderRadius: '12px',
-  padding: '12px 16px',
+  borderRadius: '16px',
+  padding: '14px 18px',
   display: 'flex',
   alignItems: 'center',
   cursor: 'pointer',
@@ -1156,7 +1159,7 @@ const bulkToggleBtnStyle = {
   flex: 1,
   minWidth: '200px',
   padding: '12px 16px',
-  borderRadius: '12px',
+  borderRadius: '14px',
   border: '1px solid #cbd5e1',
   display: 'flex',
   alignItems: 'center',
@@ -1168,14 +1171,14 @@ const bulkToggleBtnStyle = {
 const bulkBoxStyle = {
   backgroundColor: '#f8fafc',
   border: '1px solid #cbd5e1',
-  borderRadius: '14px',
-  padding: '16px',
+  borderRadius: '16px',
+  padding: '18px',
 };
 
 const bulkTextareaStyle = {
   width: '100%',
   padding: '12px',
-  borderRadius: '10px',
+  borderRadius: '12px',
   border: '1px solid #cbd5e1',
   fontSize: '13px',
   fontFamily: 'monospace',
@@ -1198,9 +1201,9 @@ const badgeStyle = {
   backgroundColor: '#dcfce7',
   color: '#15803d',
   padding: '8px 14px',
-  borderRadius: '8px',
+  borderRadius: '12px',
   fontSize: '13px',
-  fontWeight: 600,
+  fontWeight: 700,
   display: 'flex',
   alignItems: 'center',
 };
@@ -1211,8 +1214,8 @@ const toolbarBoxStyle = {
   alignItems: 'center',
   backgroundColor: '#f8fafc',
   border: '1px solid #e2e8f0',
-  borderRadius: '12px',
-  padding: '10px 14px',
+  borderRadius: '16px',
+  padding: '12px 16px',
   flexWrap: 'wrap',
   gap: '10px',
 };
@@ -1223,7 +1226,7 @@ const langSelectorBoxStyle = {
   gap: '6px',
   backgroundColor: '#ffffff',
   border: '1px solid #cbd5e1',
-  borderRadius: '8px',
+  borderRadius: '10px',
   padding: '4px 10px',
 };
 
@@ -1241,8 +1244,8 @@ const translateAllBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
-  padding: '6px 14px',
-  borderRadius: '8px',
+  padding: '8px 14px',
+  borderRadius: '12px',
   border: '1px solid #c7d2fe',
   backgroundColor: '#eef2ff',
   color: '#4338ca',
@@ -1257,7 +1260,7 @@ const autoFillBtnStyle = {
   alignItems: 'center',
   gap: '4px',
   padding: '3px 8px',
-  borderRadius: '6px',
+  borderRadius: '8px',
   border: '1px solid #c7d2fe',
   backgroundColor: '#eef2ff',
   color: '#4338ca',
@@ -1268,9 +1271,9 @@ const autoFillBtnStyle = {
 
 const cardRowContainerStyle = {
   backgroundColor: '#f8fafc',
-  borderRadius: '12px',
+  borderRadius: '18px',
   border: '1px solid #e2e8f0',
-  padding: '14px',
+  padding: '16px',
   display: 'grid',
   gap: '10px',
 };
@@ -1299,13 +1302,14 @@ const fieldLabelStyle = {
 
 const rowInputStyle = {
   width: '100%',
-  padding: '8px 10px',
-  borderRadius: '8px',
+  padding: '10px 12px',
+  borderRadius: '10px',
   border: '1px solid #cbd5e1',
-  fontSize: '13px',
+  fontSize: '0.85rem',
   boxSizing: 'border-box',
   outline: 'none',
   backgroundColor: '#ffffff',
+  color: '#0f172a',
 };
 
 const cardLangBoxStyle = {
@@ -1335,7 +1339,7 @@ const suggestionsBoxStyle = {
   right: 0,
   backgroundColor: '#ffffff',
   border: '2px solid #6366f1',
-  borderRadius: '12px',
+  borderRadius: '14px',
   boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
   zIndex: 99999,
   marginTop: '4px',
@@ -1362,16 +1366,16 @@ const closeBtnStyle = {
   border: 'none',
   cursor: 'pointer',
   color: '#64748b',
-  padding: '4px',
-  borderRadius: '6px',
+  padding: '6px',
+  borderRadius: '10px',
 };
 
 const iconBtnStyle = {
   background: 'none',
   border: 'none',
   cursor: 'pointer',
-  padding: '4px',
-  borderRadius: '6px',
+  padding: '6px',
+  borderRadius: '10px',
   display: 'inline-flex',
   alignItems: 'center',
 };
@@ -1379,24 +1383,24 @@ const iconBtnStyle = {
 const addBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
-  padding: '10px 16px',
-  backgroundColor: '#f1f5f9',
+  padding: '12px 20px',
+  backgroundColor: '#ffffff',
   border: '1px solid #cbd5e1',
-  borderRadius: '10px',
+  borderRadius: '14px',
   cursor: 'pointer',
   fontWeight: 700,
   color: '#334155',
-  fontSize: '0.875rem',
+  fontSize: '0.9rem',
 };
 
 const cancelBtnStyle = {
-  padding: '10px 18px',
+  padding: '12px 20px',
   border: '1px solid #cbd5e1',
   backgroundColor: '#ffffff',
-  borderRadius: '10px',
+  borderRadius: '14px',
   cursor: 'pointer',
-  fontWeight: 600,
-  fontSize: '0.875rem',
+  fontWeight: 700,
+  fontSize: '0.9rem',
   color: '#475569',
 };
 
