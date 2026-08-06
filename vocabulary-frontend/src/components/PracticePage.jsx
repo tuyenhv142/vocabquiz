@@ -366,7 +366,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
     if (isSlow) {
       setSlowCards((prev) => {
-        if (prev.some((c) => c.id === currentCard.id)) return prev;
+        if (prev.some((c) => c.term === currentCard.term)) return prev;
         return [...prev, {
           id: currentCard.id,
           term: currentCard.term,
@@ -380,7 +380,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
     if (!isCorrect) {
       setWrongCards((prev) => {
-        if (prev.some((c) => c.id === currentCard.id)) return prev;
+        if (prev.some((c) => c.term === currentCard.term)) return prev;
         return [...prev, {
           id: currentCard.id,
           term: currentCard.term,
@@ -412,17 +412,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       message: feedbackMsg,
     });
 
-    // Silent Adaptive Re-Queuing:
-    // If answer was wrong OR took too long (>7s), queue extra practice for this term!
-    let nextQueue = [...sessionQueue];
+    // Re-queue card to end of session if wrong or slow for extra practice:
     if (!isCorrect || isSlow) {
-      const extraPracticeCard = {
-        ...currentCard,
-        id: `${currentCard.id}-extra-${Date.now()}`,
-        isEngToVie: currentCard.isEngToVie,
-      };
-      nextQueue = reinsertCard(sessionQueue, currentCard.id, extraPracticeCard, 3);
-      setSessionQueue(nextQueue);
+      setSessionQueue((prevQueue) => [...prevQueue, currentCard]);
     }
 
     if (isCorrect) {
@@ -432,11 +424,14 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
         setFeedback(null);
 
         const nextIdx = currentIndex + 1;
-        if (nextIdx >= nextQueue.length) {
-          finishPractice();
-        } else {
-          setCurrentIndex(nextIdx);
-        }
+        setSessionQueue((latestQueue) => {
+          if (nextIdx >= latestQueue.length) {
+            finishPractice();
+          } else {
+            setCurrentIndex(nextIdx);
+          }
+          return latestQueue;
+        });
       }, 1100);
     }
   };
@@ -447,11 +442,14 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setFeedback(null);
 
     const nextIdx = currentIndex + 1;
-    if (nextIdx >= sessionQueue.length) {
-      finishPractice();
-    } else {
-      setCurrentIndex(nextIdx);
-    }
+    setSessionQueue((latestQueue) => {
+      if (nextIdx >= latestQueue.length) {
+        finishPractice();
+      } else {
+        setCurrentIndex(nextIdx);
+      }
+      return latestQueue;
+    });
   };
 
   const handleChoice = (choice) => {
