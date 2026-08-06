@@ -711,7 +711,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
         
         {/* Question Header & Hint */}
         <div style={questionMetaStyle}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', backgroundColor: '#e0e7ff', padding: '3px 10px', borderRadius: '12px' }}>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#6366f1', backgroundColor: '#e0e7ff', padding: '4px 12px', borderRadius: '12px' }}>
             {currentCard?.isEngToVie ? '🇬🇧 English → 🇻🇳 Definition' : '🇻🇳 Definition → 🇬🇧 English'}
           </span>
 
@@ -725,36 +725,36 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </button>
         </div>
 
-        {/* Question Word & Audio */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '18px' }}>
-          <div style={{ ...questionStyle, marginBottom: 0 }}>{questionText}</div>
+        {/* Question Word & Audio (Centered) */}
+        <div style={questionContainerStyle}>
+          <div style={questionStyle}>{questionText}</div>
           <button
             onClick={() => playPronunciation(currentCard?.term || questionText)}
             style={audioBtnStyle}
             title="Listen to English pronunciation (Press Spacebar)"
             aria-label="Listen to English pronunciation"
           >
-            <Volume2 size={20} />
+            <Volume2 size={22} />
           </button>
         </div>
 
-        {/* Hint Box */}
+        {/* Hint Box (Centered) */}
         {showHint && currentCard && (
           <div style={hintBoxStyle}>
-            <Lightbulb size={16} color="#ca8a04" style={{ flexShrink: 0 }} />
+            <Lightbulb size={18} color="#ca8a04" style={{ flexShrink: 0 }} />
             <div>
               {currentCard.partOfSpeech && (
-                <div style={{ fontWeight: 700, color: '#854d0e', fontSize: '0.8rem' }}>
+                <div style={{ fontWeight: 700, color: '#854d0e', fontSize: '0.85rem' }}>
                   Part of Speech: {currentCard.partOfSpeech}
                 </div>
               )}
               {currentCard.exampleSentence && (
-                <div style={{ color: '#713f12', fontSize: '0.85rem', marginTop: '2px', italic: 'true' }}>
+                <div style={{ color: '#713f12', fontSize: '0.9rem', marginTop: '2px', fontStyle: 'italic' }}>
                   "{currentCard.exampleSentence}"
                 </div>
               )}
               {!currentCard.partOfSpeech && !currentCard.exampleSentence && (
-                <div style={{ color: '#854d0e', fontSize: '0.8rem' }}>
+                <div style={{ color: '#854d0e', fontSize: '0.85rem' }}>
                   Starts with: "{correctAnswer.slice(0, 2)}..." ({correctAnswer.length} letters)
                 </div>
               )}
@@ -762,7 +762,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           </div>
         )}
 
-        {/* Options / Input */}
+        {/* Options / Input (Centered Grid) */}
         {practiceMode === QuestionType.MULTIPLE_CHOICE ? (
           <div style={optionsGridStyle}>
             {choices.map((choice, index) => {
@@ -781,19 +781,15 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                   disabled={Boolean(feedback)}
                   style={{
                     ...optionBtnStyle,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justify: 'space-between',
-                    gap: '12px',
                     borderColor: (showAsCorrect || revealCorrect) ? '#16a34a' : showAsWrong ? '#dc2626' : '#cbd5e1',
                     borderWidth: highlighted ? '2px' : '1px',
                     backgroundColor: (showAsCorrect || revealCorrect) ? '#dcfce7' : showAsWrong ? '#fee2e2' : '#ffffff',
                     color: (showAsCorrect || revealCorrect) ? '#15803d' : showAsWrong ? '#b91c1c' : '#0f172a',
-                    fontWeight: highlighted ? 700 : 500,
+                    fontWeight: highlighted ? 700 : 600,
                     opacity: feedback && !highlighted ? 0.5 : 1,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={hotkeyBadgeStyle}>[{index + 1}]</span>
                     <span>{choice}</span>
                   </div>
@@ -812,7 +808,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
             })}
           </div>
         ) : (
-          <div style={{ display: 'grid', gap: '14px' }}>
+          <div style={inputContainerStyle}>
             <input
               type="text"
               value={inputValue}
@@ -831,14 +827,14 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
               type="button"
               onClick={handleWrittenSubmit}
               disabled={!inputValue.trim() || Boolean(feedback)}
-              style={nextBtnStyle}
+              style={{ ...nextBtnStyle, width: '100%' }}
             >
               Submit Answer (Enter)
             </button>
           </div>
         )}
 
-        {/* Feedback Banner */}
+        {/* Feedback Banner (Centered) */}
         {feedback && (
           <div
             style={{
@@ -849,14 +845,14 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
               gap: '8px',
-              marginTop: '16px',
             }}
           >
             {feedback.isCorrect ? (
-              <CheckCircle2 size={18} style={{ flexShrink: 0 }} />
+              <CheckCircle2 size={20} style={{ flexShrink: 0 }} />
             ) : (
-              <AlertCircle size={18} style={{ flexShrink: 0 }} />
+              <AlertCircle size={20} style={{ flexShrink: 0 }} />
             )}
             <span>{feedback.message}</span>
           </div>
@@ -968,19 +964,33 @@ const modeBtnStyle = {
 
 const cardStyle = {
   backgroundColor: '#ffffff',
-  borderRadius: '20px',
-  padding: '24px',
+  borderRadius: '24px',
+  padding: '36px 28px',
   border: '1px solid #e2e8f0',
-  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
+  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
 };
 
 const questionMetaStyle = {
   display: 'flex',
-  justify: 'space-between',
+  justifyContent: 'center',
   alignItems: 'center',
-  marginBottom: '16px',
+  width: '100%',
+  marginBottom: '20px',
+  gap: '12px',
   flexWrap: 'wrap',
-  gap: '8px',
+};
+
+const questionContainerStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '14px',
+  margin: '10px 0 28px',
+  width: '100%',
 };
 
 const hintBtnStyle = {
@@ -1000,52 +1010,69 @@ const hintBtnStyle = {
 const hintBoxStyle = {
   display: 'flex',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: '10px',
   backgroundColor: '#fefce8',
   border: '1px solid #fef08a',
-  borderRadius: '12px',
-  padding: '10px 14px',
-  marginBottom: '16px',
+  borderRadius: '14px',
+  padding: '12px 18px',
+  marginBottom: '24px',
+  maxWidth: '560px',
+  width: '100%',
+  boxSizing: 'border-box',
+  textAlign: 'center',
 };
 
 const questionStyle = {
-  fontSize: '1.6rem',
+  fontSize: '2.2rem',
   fontWeight: 800,
   color: '#0f172a',
-  marginBottom: '14px',
+  textAlign: 'center',
+  lineHeight: 1.25,
+  margin: 0,
 };
 
 const audioBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '40px',
-  height: '40px',
+  width: '44px',
+  height: '44px',
   borderRadius: '50%',
-  border: '1px solid #cbd5e1',
+  border: '1px solid #bfdbfe',
   backgroundColor: '#eff6ff',
   color: '#2563eb',
   cursor: 'pointer',
-  boxShadow: '0 2px 6px rgba(37,99,235,0.12)',
+  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.15)',
   transition: 'all 0.15s ease',
   flexShrink: 0,
 };
 
 const optionsGridStyle = {
   display: 'grid',
-  gap: '12px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: '14px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+  width: '100%',
+  maxWidth: '720px',
+  margin: '0 auto',
 };
 
 const optionBtnStyle = {
-  padding: '14px 18px',
-  borderRadius: '14px',
+  padding: '16px 20px',
+  borderRadius: '16px',
   border: '1px solid #cbd5e1',
   backgroundColor: '#ffffff',
-  fontSize: '0.95rem',
+  fontSize: '1rem',
   cursor: 'pointer',
-  textAlign: 'left',
+  textAlign: 'center',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '12px',
+  minHeight: '60px',
+  boxSizing: 'border-box',
   transition: 'all 0.15s ease',
+  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.02)',
 };
 
 const hotkeyBadgeStyle = {
