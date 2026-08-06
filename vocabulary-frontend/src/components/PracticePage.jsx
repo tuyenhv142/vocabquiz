@@ -298,13 +298,17 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
   const completed = isFinished;
 
-  const finishPractice = async (finalScore, finalTotal) => {
+  const finishPractice = async () => {
     setIsFinished(true);
     setFeedback(null);
     setShowCorrection(false);
 
-    if (setInfo?.id && finalTotal > 0) {
-      const pct = Math.round((finalScore / finalTotal) * 100);
+    const initialTotal = cards.length > 0 ? cards.length : sessionQueue.length;
+    const wrongCount = wrongCards.length;
+    const masteredCount = Math.max(0, initialTotal - wrongCount);
+    const pct = initialTotal > 0 ? Math.round((masteredCount / initialTotal) * 100) : 0;
+
+    if (setInfo?.id && initialTotal > 0) {
       const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
         ? 'http://localhost:5000'
         : '';
@@ -312,7 +316,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
         await fetch(`${API_BASE}/api/sets/${setInfo.id}/practice`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ percentage: pct, score: finalScore, total: finalTotal }),
+          body: JSON.stringify({ percentage: pct, score: masteredCount, total: initialTotal }),
         });
       } catch (err) {
         console.error('Failed to save practice results:', err);
@@ -392,7 +396,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
       const nextIdx = currentIndex + 1;
       if (nextIdx >= nextQueue.length) {
-        finishPractice(newScore, nextQueue.length);
+        finishPractice();
       } else {
         setCurrentIndex(nextIdx);
       }
@@ -462,8 +466,10 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
   // --- Session Completion Summary ---
   if (completed) {
-    const totalCount = sessionQueue.length;
-    const percentage = totalCount > 0 ? Math.round((score / totalCount) * 100) : 0;
+    const initialTotal = cards.length > 0 ? cards.length : sessionQueue.length;
+    const wrongCount = wrongCards.length;
+    const masteredCount = Math.max(0, initialTotal - wrongCount);
+    const percentage = initialTotal > 0 ? Math.round((masteredCount / initialTotal) * 100) : 0;
     const hasWrongCards = wrongCards.length > 0;
     const hasSlowCards = slowCards.length > 0;
 
