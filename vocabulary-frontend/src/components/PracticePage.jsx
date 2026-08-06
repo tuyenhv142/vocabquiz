@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -247,6 +247,20 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       }))
     );
   };
+
+  const inputRef = useRef(null);
+
+  // Auto-focus input box whenever question changes or written mode is activated
+  useEffect(() => {
+    if (practiceMode === QuestionType.WRITTEN_INPUT && !feedback && !isFinished) {
+      const timer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, practiceMode, feedback, isFinished]);
 
   // Live Silent Timer for question start
   useEffect(() => {
@@ -935,6 +949,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
         ) : (
           <div style={inputContainerStyle}>
             <input
+              ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
