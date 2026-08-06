@@ -344,15 +344,29 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
     if (isSlow) {
       setSlowCards((prev) => {
-        if (prev.some((c) => c.term === currentCard.term)) return prev;
-        return [...prev, { id: currentCard.id, term: currentCard.term, definition: currentCard.definition, timeTaken }];
+        if (prev.some((c) => c.id === currentCard.id)) return prev;
+        return [...prev, {
+          id: currentCard.id,
+          term: currentCard.term,
+          definition: currentCard.definition,
+          questionText,
+          correctAnswer,
+          timeTaken,
+        }];
       });
     }
 
     if (!isCorrect) {
       setWrongCards((prev) => {
-        if (prev.some((c) => c.term === currentCard.term)) return prev;
-        return [...prev, { id: currentCard.id, term: currentCard.term, definition: currentCard.definition }];
+        if (prev.some((c) => c.id === currentCard.id)) return prev;
+        return [...prev, {
+          id: currentCard.id,
+          term: currentCard.term,
+          definition: currentCard.definition,
+          questionText,
+          correctAnswer,
+          userAnswer: chosenText,
+        }];
       });
     }
 
@@ -604,8 +618,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                     }}
                   >
                     <div>
-                      <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '8px' }}>{sc.term}</span>
-                      <span style={{ color: '#64748b' }}>{sc.definition}</span>
+                      <span style={{ fontWeight: 700, color: '#0f172a', marginRight: '8px' }}>{sc.questionText || sc.term}</span>
+                      <span style={{ color: '#64748b' }}>➔ {sc.correctAnswer || sc.definition}</span>
                     </div>
                   </div>
                 ))}
@@ -634,8 +648,15 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                       fontSize: '0.88rem',
                     }}
                   >
-                    <span style={{ fontWeight: 700, color: '#0f172a' }}>{wc.term}</span>
-                    <span style={{ color: '#64748b' }}>{wc.definition}</span>
+                    <div>
+                      <span style={{ fontWeight: 700, color: '#0f172a' }}>{wc.questionText || wc.term}</span>
+                      <span style={{ color: '#64748b', marginLeft: '8px' }}>➔ {wc.correctAnswer || wc.definition}</span>
+                    </div>
+                    {wc.userAnswer && (
+                      <span style={{ color: '#dc2626', fontSize: '0.8rem', fontWeight: 600 }}>
+                        Your answer: "{wc.userAnswer}"
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
