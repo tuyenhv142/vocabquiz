@@ -297,30 +297,26 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     if (isCorrect) {
       newScore = score + 1;
       setScore(newScore);
-      if (isSlow) {
-        feedbackMsg = `⏱️ Correct, but took ${timeTaken}s (slow >${SLOW_TIME_THRESHOLD_SECONDS}s)! Re-queuing word for extra speed practice.`;
-      } else {
-        feedbackMsg = `⚡ Excellent! Fast & correct (${timeTaken}s)!`;
-      }
+      feedbackMsg = '✓ Correct!';
     } else {
-      feedbackMsg = `✗ Incorrect (${timeTaken}s) — correct answer: "${correctAnswer}"`;
+      feedbackMsg = `✗ Incorrect — correct answer: "${correctAnswer}"`;
     }
 
     setFeedback({
-      isCorrect: isCorrect && !isSlow,
+      isCorrect,
       isSlow,
       timeTaken,
       message: feedbackMsg,
     });
 
     // --- Adaptive Re-Queuing Logic ---
-    // If answer was wrong OR took too long (>7s), queue extra practice for this term!
+    // If answer was wrong OR took too long (>7s), silently queue extra practice for this term!
     let nextQueue = [...sessionQueue];
     if (!isCorrect || isSlow) {
       const extraPracticeCard = {
         ...currentCard,
         id: `${currentCard.id}-extra-${Date.now()}`,
-        isEngToVie: !currentCard.isEngToVie, // Test opposite translation direction for mastery!
+        isEngToVie: !currentCard.isEngToVie,
       };
       nextQueue = reinsertCard(sessionQueue, currentCard.id, extraPracticeCard, 3);
       setSessionQueue(nextQueue);
@@ -336,7 +332,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       } else {
         setCurrentIndex(nextIdx);
       }
-    }, isSlow && isCorrect ? 2000 : 1400);
+    }, 1200);
   };
 
   const handleChoice = (choice) => {
@@ -625,33 +621,11 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
       <div style={cardStyle}>
         
-        {/* Question Header & Live Question Timer */}
+        {/* Question Header */}
         <div style={questionMetaStyle}>
           <span style={questionLabelStyle}>
             Question {currentIndex + 1} of {sessionQueue.length}
           </span>
-
-          {/* Live Timer Badge */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              backgroundColor: timerBadgeBg,
-              color: timerBadgeColor,
-              fontSize: '0.8rem',
-              fontWeight: 800,
-              transition: 'all 0.3s ease',
-            }}
-            title={`Timer for current question. Threshold is ${SLOW_TIME_THRESHOLD_SECONDS}s.`}
-          >
-            <Clock size={14} />
-            <span>00:{elapsedSeconds < 10 ? `0${elapsedSeconds}` : elapsedSeconds}s</span>
-            {isTimerSlow && <span style={{ fontSize: '0.7rem' }}>(Slow - Extra practice queued)</span>}
-          </div>
-
           <span style={questionTypeStyle}>Multiple Choice</span>
         </div>
 
