@@ -111,7 +111,7 @@ function shuffle(array) {
   return [...array].sort(() => Math.random() - 0.5);
 }
 
-function buildSessionQueue(cards) {
+function buildSessionQueue(cards, isEngToVie = true) {
   return cards.map((card, index) => ({
     id: card.id ?? `${card.term}-${card.definition}-${index}`,
     term: card.term || '',
@@ -124,7 +124,7 @@ function buildSessionQueue(cards) {
     intervalDays: 0,
     nextReviewAt: null,
     lastReviewedAt: null,
-    isEngToVie: Math.random() > 0.5,
+    isEngToVie: isEngToVie,
   }));
 }
 
@@ -216,7 +216,8 @@ function reinsertCard(queue, currentId, updatedCard, stepsAhead = 3) {
 const SLOW_TIME_THRESHOLD_SECONDS = 7;
 
 export default function PracticePage({ setInfo, cards = [], onBack }) {
-  const [sessionQueue, setSessionQueue] = useState(() => buildSessionQueue(cards));
+  const [questionDirection, setQuestionDirection] = useState('termToDef'); // 'termToDef' | 'defToTerm'
+  const [sessionQueue, setSessionQueue] = useState(() => buildSessionQueue(cards, true));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [practiceMode, setPracticeMode] = useState(QuestionType.MULTIPLE_CHOICE);
 
@@ -236,6 +237,17 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
   const [wrongCards, setWrongCards] = useState([]);
   const [slowCards, setSlowCards] = useState([]);
 
+  const handleDirectionChange = (dir) => {
+    setQuestionDirection(dir);
+    const isEng = dir === 'termToDef';
+    setSessionQueue((prev) =>
+      prev.map((c) => ({
+        ...c,
+        isEngToVie: isEng,
+      }))
+    );
+  };
+
   // Live Silent Timer for question start
   useEffect(() => {
     if (isFinished || !cards.length || feedback) return;
@@ -244,7 +256,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
   }, [currentIndex, isFinished, feedback, cards.length]);
 
   useEffect(() => {
-    setSessionQueue(buildSessionQueue(cards));
+    setSessionQueue(buildSessionQueue(cards, questionDirection === 'termToDef'));
     setCurrentIndex(0);
     setInputValue('');
     setSelectedAnswer('');
@@ -258,7 +270,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     setWrongCards([]);
     setSlowCards([]);
     setQuestionTimings([]);
-  }, [cards]);
+  }, [cards, questionDirection]);
 
   const currentCard = sessionQueue[currentIndex] || null;
   const questionText = currentCard ? getQuestionText(currentCard) : '';
@@ -397,7 +409,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       const extraPracticeCard = {
         ...currentCard,
         id: `${currentCard.id}-extra-${Date.now()}`,
-        isEngToVie: !currentCard.isEngToVie,
+        isEngToVie: currentCard.isEngToVie,
       };
       nextQueue = reinsertCard(sessionQueue, currentCard.id, extraPracticeCard, 3);
       setSessionQueue(nextQueue);
@@ -729,9 +741,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
           <div style={{ ...progressBarFillStyle, width: `${progressPct}%` }} />
         </div>
 
-        {/* Mode Switcher & Hotkey Banner */}
+        {/* Mode Switcher & Direction Toolbar */}
         <div style={modeToolbarStyle}>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => setPracticeMode(QuestionType.MULTIPLE_CHOICE)}
@@ -755,6 +767,36 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
               }}
             >
               <Type size={14} /> Written Input
+            </button>
+
+            <div style={{ width: '1px', backgroundColor: '#cbd5e1', margin: '0 4px' }} />
+
+            {/* Direction Selector */}
+            <button
+              type="button"
+              onClick={() => handleDirectionChange('termToDef')}
+              style={{
+                ...modeBtnStyle,
+                backgroundColor: questionDirection === 'termToDef' ? '#ffffff' : 'transparent',
+                color: questionDirection === 'termToDef' ? '#16a34a' : '#64748b',
+                boxShadow: questionDirection === 'termToDef' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              }}
+              title="Test Term → Definition (Default)"
+            >
+              Term ➔ Definition
+            </button>
+            <button
+              type="button"
+              onClick={() => handleDirectionChange('defToTerm')}
+              style={{
+                ...modeBtnStyle,
+                backgroundColor: questionDirection === 'defToTerm' ? '#ffffff' : 'transparent',
+                color: questionDirection === 'defToTerm' ? '#16a34a' : '#64748b',
+                boxShadow: questionDirection === 'defToTerm' ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+              }}
+              title="Test Definition → Term"
+            >
+              Definition ➔ Term
             </button>
           </div>
 
