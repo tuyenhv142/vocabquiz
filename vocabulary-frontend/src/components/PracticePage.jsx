@@ -409,6 +409,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       isCorrect,
       isSlow,
       timeTaken,
+      userAnswer: chosenText,
       message: feedbackMsg,
     });
 
@@ -417,7 +418,8 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       setSessionQueue((prevQueue) => [...prevQueue, currentCard]);
     }
 
-    // Auto-advance to next question for both correct and wrong answers (no stopping)
+    // Auto-advance: 2.4s for written mistakes so user can study correct answer, 1.1s for others
+    const delay = !isCorrect && practiceMode === QuestionType.WRITTEN_INPUT ? 2400 : 1100;
     setTimeout(() => {
       setSelectedAnswer('');
       setInputValue('');
@@ -432,7 +434,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
         }
         return latestQueue;
       });
-    }, 1100);
+    }, delay);
   };
 
   const handleContinueNext = () => {
@@ -943,7 +945,14 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                 }
               }}
               placeholder="Type your answer here..."
-              style={inputStyle}
+              disabled={Boolean(feedback)}
+              style={{
+                ...inputStyle,
+                borderColor: feedback ? (feedback.isCorrect ? '#16a34a' : '#dc2626') : '#cbd5e1',
+                backgroundColor: feedback ? (feedback.isCorrect ? '#dcfce7' : '#fee2e2') : '#ffffff',
+                color: feedback ? (feedback.isCorrect ? '#15803d' : '#b91c1c') : '#0f172a',
+                fontWeight: feedback ? 700 : 500,
+              }}
               autoFocus
             />
             <button
@@ -954,6 +963,34 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
             >
               Submit Answer (Enter)
             </button>
+
+            {/* Explicit Written Answer Correction Box */}
+            {feedback && !feedback.isCorrect && (
+              <div
+                style={{
+                  padding: '14px 18px',
+                  borderRadius: '14px',
+                  backgroundColor: '#fef2f2',
+                  border: '1.5px solid #fecaca',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  boxShadow: '0 4px 12px rgba(220, 38, 38, 0.08)',
+                }}
+              >
+                <div style={{ fontSize: '0.9rem', color: '#991b1b' }}>
+                  <span>Your answer: </span>
+                  <span style={{ fontWeight: 700, textDecoration: 'line-through' }}>
+                    "{feedback.userAnswer || inputValue}"
+                  </span>
+                </div>
+                <div style={{ fontSize: '1.05rem', color: '#15803d', fontWeight: 800 }}>
+                  <span>Correct answer: </span>
+                  <span>"{correctAnswer}"</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
