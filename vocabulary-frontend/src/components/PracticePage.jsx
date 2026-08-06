@@ -281,10 +281,20 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     return buildOptions(cards.length > 0 ? cards : sessionQueue, currentCard);
   }, [currentCard?.id, currentCard?.isEngToVie, cards, sessionQueue]);
 
-  // Keyboard Shortcuts (1, 2, 3, 4 for options & Space for audio)
+  // Keyboard Shortcuts (1, 2, 3, 4 for options, Space for audio, Enter to advance on wrong answer)
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (isFinished || feedback) return;
+      if (isFinished) return;
+
+      if (feedback && !feedback.isCorrect) {
+        if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+          e.preventDefault();
+          handleContinueNext();
+          return;
+        }
+      }
+
+      if (feedback) return;
 
       // Don't intercept number keys if typing in text input
       if (practiceMode === QuestionType.WRITTEN_INPUT) return;
@@ -306,7 +316,7 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFinished, feedback, practiceMode, choices, currentCard, questionText]);
+  }, [isFinished, feedback, practiceMode, choices, currentCard, questionText, sessionQueue, currentIndex]);
 
   const completed = isFinished;
 
@@ -415,18 +425,33 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
       setSessionQueue(nextQueue);
     }
 
-    setTimeout(() => {
-      setSelectedAnswer('');
-      setInputValue('');
-      setFeedback(null);
+    if (isCorrect) {
+      setTimeout(() => {
+        setSelectedAnswer('');
+        setInputValue('');
+        setFeedback(null);
 
-      const nextIdx = currentIndex + 1;
-      if (nextIdx >= nextQueue.length) {
-        finishPractice();
-      } else {
-        setCurrentIndex(nextIdx);
-      }
-    }, 1100);
+        const nextIdx = currentIndex + 1;
+        if (nextIdx >= nextQueue.length) {
+          finishPractice();
+        } else {
+          setCurrentIndex(nextIdx);
+        }
+      }, 1100);
+    }
+  };
+
+  const handleContinueNext = () => {
+    setSelectedAnswer('');
+    setInputValue('');
+    setFeedback(null);
+
+    const nextIdx = currentIndex + 1;
+    if (nextIdx >= sessionQueue.length) {
+      finishPractice();
+    } else {
+      setCurrentIndex(nextIdx);
+    }
   };
 
   const handleChoice = (choice) => {
@@ -957,6 +982,31 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
             )}
             <span>{feedback.message}</span>
           </div>
+        )}
+
+        {/* Continue Button for Wrong Answer Review */}
+        {feedback && !feedback.isCorrect && (
+          <button
+            type="button"
+            onClick={handleContinueNext}
+            style={{
+              ...nextBtnStyle,
+              backgroundColor: '#dc2626',
+              marginTop: '16px',
+              padding: '14px 28px',
+              fontSize: '1rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 14px rgba(220, 38, 38, 0.25)',
+              width: '100%',
+              maxWidth: '560px',
+              justifyContent: 'center',
+            }}
+            autoFocus
+          >
+            <span>Continue to Next Question (Press Enter ➔)</span>
+          </button>
         )}
       </div>
     </div>
