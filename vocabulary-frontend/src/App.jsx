@@ -6,7 +6,7 @@ import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -320,50 +320,110 @@ export default function App() {
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
                 {sets.map((set) => {
                   const pct = set.practice_percentage;
                   const hasPracticed = pct != null;
                   let pctColor = '#64748b';
+                  let pctBg = '#f1f5f9';
                   if (hasPracticed) {
-                    if (pct >= 90) pctColor = '#15803d';
-                    else if (pct >= 70) pctColor = '#ca8a04';
-                    else if (pct >= 50) pctColor = '#ea580c';
-                    else pctColor = '#dc2626';
+                    if (pct >= 90) { pctColor = '#16a34a'; pctBg = '#f0fdf4'; }
+                    else if (pct >= 70) { pctColor = '#ca8a04'; pctBg = '#fefce8'; }
+                    else if (pct >= 50) { pctColor = '#ea580c'; pctBg = '#fff7ed'; }
+                    else { pctColor = '#dc2626'; pctBg = '#fef2f2'; }
                   }
+
                   return (
                     <div key={set.id} style={setCardStyle}>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                          <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>{set.title}</h3>
-                          {hasPracticed && (
-                            <span style={{
-                              display: 'inline-flex', alignItems: 'center', gap: '4px',
-                              padding: '3px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
-                              backgroundColor: `${pctColor}14`, color: pctColor, border: `1px solid ${pctColor}30`,
-                            }}>
-                              {pct}% Mastered
+                      {/* Top Header Row */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>
+                          <Layers size={14} />
+                          <span>Set</span>
+                        </div>
+
+                        {hasPracticed ? (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
+                            backgroundColor: pctBg, color: pctColor, border: `1px solid ${pctColor}30`,
+                          }}>
+                            <Trophy size={12} /> {pct}% Mastered
+                          </span>
+                        ) : (
+                          <span style={{
+                            padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
+                            backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0',
+                          }}>
+                            New Set
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Content Section */}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '16px' }}>
+                        <h3 style={{
+                          margin: '0 0 8px 0',
+                          fontSize: '1.1rem',
+                          fontWeight: 800,
+                          color: '#0f172a',
+                          lineHeight: 1.35,
+                          minHeight: '2.7rem',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden'
+                        }}>
+                          {set.title}
+                        </h3>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', color: '#64748b', marginBottom: '14px', flexWrap: 'wrap' }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <BookOpen size={14} color="#3b82f6" />
+                            <strong>{set.card_count}</strong> {set.card_count === 1 ? 'word' : 'words'}
+                          </span>
+                          {hasPracticed && set.last_practiced && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <Clock size={14} color="#94a3b8" />
+                              {new Date(set.last_practiced).toLocaleDateString()}
                             </span>
                           )}
                         </div>
-                        <div style={{ display: 'flex', gap: '14px', marginTop: '6px', flexWrap: 'wrap', fontSize: '0.8rem', color: '#64748b' }}>
-                          <span><strong>{set.card_count}</strong> word{set.card_count === 1 ? '' : 's'}</span>
-                          {hasPracticed && set.last_practiced && (
-                            <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
-                          )}
+
+                        {/* Visual Progress Bar */}
+                        <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', marginTop: 'auto' }}>
+                          <div style={{
+                            width: `${hasPracticed ? Math.min(100, Math.max(5, pct)) : 0}%`,
+                            height: '100%',
+                            backgroundColor: hasPracticed ? pctColor : 'transparent',
+                            borderRadius: '10px',
+                            transition: 'width 0.4s ease'
+                          }} />
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
+                      {/* Bottom Actions Row */}
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
                         <button
                           onClick={() => loadSetDetails(set.id)}
-                          style={{ ...primaryBtnStyle, padding: '10px 18px' }}
+                          style={{
+                            ...primaryBtnStyle,
+                            flex: 1,
+                            justifyContent: 'center',
+                            padding: '10px 14px',
+                            fontSize: '0.85rem',
+                          }}
                         >
-                          Review & Practice
+                          <Play size={15} fill="currentColor" /> Practice Set
                         </button>
                         <button
                           onClick={(e) => handleDeleteSet(set.id, set.title, e)}
-                          style={dangerBtnStyle}
-                          title="Delete this vocabulary set"
+                          style={{
+                            ...dangerBtnStyle,
+                            padding: '10px 12px',
+                            borderRadius: '14px',
+                          }}
+                          title="Delete this set"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -526,14 +586,13 @@ const cardContainerStyle = {
 };
 
 const setCardStyle = {
-  padding: '20px 24px',
+  padding: '20px',
   borderRadius: '20px',
   border: '1px solid #e2e8f0',
   backgroundColor: '#ffffff',
   display: 'flex',
-  justify: 'space-between',
-  alignItems: 'center',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
-  flexWrap: 'wrap',
-  gap: '12px',
+  flexDirection: 'column',
+  justifyContent: 'space-between',
+  boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)',
+  transition: 'all 0.2s ease',
 };
