@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, UserPlus, AlertCircle, KeyRound, CheckCircle2 } from 'lucide-react';
+import { Mail, Lock, LogIn, UserPlus, AlertCircle, KeyRound, CheckCircle2, Loader2 } from 'lucide-react';
 import { API_BASE } from '../config';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
@@ -156,12 +156,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
         )}
 
+        <style>{`
+          @keyframes authSpin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+
         {isLoginMode ? (
           /* LOGIN FORM */
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Email Address</label>
-              <div style={inputWrapperStyle}>
+              <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
                 <Mail size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
                 <input
                   type="email"
@@ -169,6 +176,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={inputStyle}
+                  disabled={loading}
                   required
                 />
               </div>
@@ -176,7 +184,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
             <div style={{ marginBottom: '24px' }}>
               <label style={labelStyle}>Password</label>
-              <div style={inputWrapperStyle}>
+              <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
                 <Lock size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
                 <input
                   type="password"
@@ -184,14 +192,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={inputStyle}
+                  disabled={loading}
                   required
                   minLength={6}
                 />
               </div>
             </div>
 
-            <button type="submit" disabled={loading} style={submitBtnStyle}>
-              {loading ? 'Signing In...' : (
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...submitBtnStyle,
+                opacity: loading ? 0.75 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} style={{ marginRight: '8px', animation: 'authSpin 1s linear infinite' }} />
+                  Signing In...
+                </>
+              ) : (
                 <>
                   <LogIn size={18} style={{ marginRight: '8px' }} /> Sign In
                 </>
@@ -203,7 +225,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <form onSubmit={handleSendOtp}>
             <div style={{ marginBottom: '16px' }}>
               <label style={labelStyle}>Email Address</label>
-              <div style={inputWrapperStyle}>
+              <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
                 <Mail size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
                 <input
                   type="email"
@@ -211,6 +233,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   style={inputStyle}
+                  disabled={loading}
                   required
                 />
               </div>
@@ -218,7 +241,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
             <div style={{ marginBottom: '24px' }}>
               <label style={labelStyle}>Create Password</label>
-              <div style={inputWrapperStyle}>
+              <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
                 <Lock size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
                 <input
                   type="password"
@@ -226,14 +249,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={inputStyle}
+                  disabled={loading}
                   required
                   minLength={6}
                 />
               </div>
             </div>
 
-            <button type="submit" disabled={loading} style={submitBtnStyle}>
-              {loading ? 'Sending Code...' : (
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                ...submitBtnStyle,
+                opacity: loading ? 0.75 : 1,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} style={{ marginRight: '8px', animation: 'authSpin 1s linear infinite' }} />
+                  Sending Code...
+                </>
+              ) : (
                 <>
                   <Mail size={18} style={{ marginRight: '8px' }} /> Send Verification Code
                 </>
@@ -245,7 +282,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <form onSubmit={handleVerifyOtp}>
             <div style={{ marginBottom: '20px' }}>
               <label style={labelStyle}>6-Digit Verification Code</label>
-              <div style={inputWrapperStyle}>
+              <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
                 <KeyRound size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
                 <input
                   type="text"
@@ -254,13 +291,27 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                   style={{ ...inputStyle, fontSize: '18px', letterSpacing: '4px', fontWeight: 'bold' }}
+                  disabled={loading}
                   required
                 />
               </div>
             </div>
 
-            <button type="submit" disabled={loading || otpCode.length < 6} style={submitBtnStyle}>
-              {loading ? 'Verifying...' : (
+            <button
+              type="submit"
+              disabled={loading || otpCode.length < 6}
+              style={{
+                ...submitBtnStyle,
+                opacity: (loading || otpCode.length < 6) ? 0.75 : 1,
+                cursor: (loading || otpCode.length < 6) ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={18} style={{ marginRight: '8px', animation: 'authSpin 1s linear infinite' }} />
+                  Verifying & Registering...
+                </>
+              ) : (
                 <>
                   <UserPlus size={18} style={{ marginRight: '8px' }} /> Verify & Register
                 </>
@@ -268,10 +319,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             </button>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '14px', fontSize: '12px' }}>
-              <button type="button" onClick={handleSendOtp} style={linkBtnStyle} disabled={loading}>
-                Resend Code
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                style={{ ...linkBtnStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+                disabled={loading}
+              >
+                {loading ? 'Sending...' : 'Resend Code'}
               </button>
-              <button type="button" onClick={resetForm} style={linkBtnStyle}>
+              <button type="button" onClick={resetForm} style={linkBtnStyle} disabled={loading}>
                 Change Email
               </button>
             </div>
@@ -281,7 +337,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         {/* Mode Toggle Footer */}
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#64748b' }}>
           {isLoginMode ? "Don't have an account? " : 'Already have an account? '}
-          <button type="button" onClick={toggleMode} style={toggleBtnStyle}>
+          <button type="button" onClick={toggleMode} style={toggleBtnStyle} disabled={loading}>
             {isLoginMode ? 'Sign Up' : 'Log In'}
           </button>
         </div>
