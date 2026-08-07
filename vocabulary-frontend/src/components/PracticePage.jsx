@@ -216,7 +216,7 @@ function reinsertCard(queue, currentId, updatedCard, stepsAhead = 3) {
 
 const SLOW_TIME_THRESHOLD_SECONDS = 7;
 
-export default function PracticePage({ setInfo, cards = [], onBack }) {
+export default function PracticePage({ setInfo, cards = [], onBack, onPracticeComplete }) {
   const [questionDirection, setQuestionDirection] = useState('termToDef'); // 'termToDef' | 'defToTerm'
   const [sessionQueue, setSessionQueue] = useState(() => buildSessionQueue(cards, true));
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -347,11 +347,15 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 
     if (setInfo?.id && initialTotal > 0) {
       try {
-        await fetch(`${API_BASE}/api/sets/${setInfo.id}/practice`, {
+        const res = await fetch(`${API_BASE}/api/sets/${setInfo.id}/practice`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ percentage: pct, score: masteredCount, total: initialTotal }),
         });
+        if (res.ok) {
+          const updatedSet = await res.json();
+          onPracticeComplete?.(updatedSet);
+        }
       } catch (err) {
         console.error('Failed to save practice results:', err);
       }

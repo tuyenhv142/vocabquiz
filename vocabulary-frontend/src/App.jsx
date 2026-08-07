@@ -275,6 +275,18 @@ export default function App() {
               setInfo={selectedSet}
               cards={selectedCards}
               onBack={endPractice}
+              onPracticeComplete={(updatedSet) => {
+                if (updatedSet) {
+                  setSelectedSet((prev) => (prev ? { ...prev, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced } : prev));
+                  setSets((prevSets) =>
+                    prevSets.map((s) =>
+                      s.id === updatedSet.id
+                        ? { ...s, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced }
+                        : s
+                    )
+                  );
+                }
+              }}
             />
           ) : (
             <FlashcardPage

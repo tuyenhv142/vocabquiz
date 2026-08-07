@@ -171,6 +171,40 @@ app.delete('/api/sets/:id', async (req, res) => {
 });
 
 // ----------------------------------------------------
+// 4b. PUT /api/sets/:id/practice - Save practice mastery percentage & last_practiced date
+// ----------------------------------------------------
+app.put('/api/sets/:id/practice', async (req, res) => {
+  const { id: setId } = req.params;
+  const { percentage } = req.body;
+
+  if (percentage === undefined || percentage === null) {
+    return res.status(400).json({ error: 'percentage is required.' });
+  }
+
+  const pct = Math.min(100, Math.max(0, Math.round(Number(percentage))));
+
+  try {
+    const result = await db.query(
+      `UPDATE study_sets 
+       SET practice_percentage = $1, last_practiced = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING *`,
+      [pct, setId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Study set not found' });
+    }
+
+    console.log(`✅ [PRACTICE RESULT SAVED] Set ${setId}: ${pct}% Mastered`);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('Failed to update practice result:', err);
+    res.status(500).json({ error: 'Failed to update practice result' });
+  }
+});
+
+// ----------------------------------------------------
 // 5. POST /api/sets/:id/cards/batch - Bulk Import Words
 // ----------------------------------------------------
 app.post('/api/sets/:id/cards/batch', async (req, res) => {
