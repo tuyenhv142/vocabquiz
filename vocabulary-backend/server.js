@@ -378,9 +378,9 @@ function getMailTransporter() {
       user: smtpUser,
       pass: smtpPass,
     },
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 8000,
+    connectionTimeout: 1500,
+    greetingTimeout: 1500,
+    socketTimeout: 1500,
   });
 }
 
@@ -397,7 +397,7 @@ async function sendVerificationEmail(email, code) {
     </div>
   `;
 
-  // 1. Try Resend HTTPS REST API if RESEND_API_KEY is configured
+  // 1. Try Resend HTTPS REST API if RESEND_API_KEY is configured (HTTPS Port 443 - Never blocked on Render)
   if (process.env.RESEND_API_KEY) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
@@ -426,7 +426,7 @@ async function sendVerificationEmail(email, code) {
     }
   }
 
-  // 2. Fallback to Nodemailer SMTP (Port 465 SSL default)
+  // 2. Fallback to Nodemailer SMTP
   const defaultSender = process.env.SMTP_USER || 'tuyenhv.142@gmail.com';
   const mailOptions = {
     from: `"VocabQuizWithNil" <${defaultSender}>`,
@@ -441,14 +441,14 @@ async function sendVerificationEmail(email, code) {
     try {
       const sendPromise = transporter.sendMail(mailOptions);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('SMTP Connection timeout (8s limit reached)')), 8000)
+        setTimeout(() => reject(new Error('SMTP connection timed out (Render blocks outbound TCP ports 587/465). Use RESEND_API_KEY for instant HTTPS delivery.')), 1500)
       );
 
       await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ [EMAIL SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
       return true;
     } catch (err) {
-      console.error(`❌ [SMTP MAIL ERROR for ${email}]:`, err.message);
+      console.error(`❌ [SMTP MAIL NOTICE for ${email}]:`, err.message);
       return false;
     }
   } else {
