@@ -302,13 +302,19 @@ export default function AdminDashboardPage({ currentUser }) {
                         </span>
                       </td>
                       <td style={{ ...tdStyle, textAlign: 'right' }}>
-                        <button
-                          onClick={() => handleDeleteUser(user)}
-                          style={deleteBtnStyle}
-                          title="Force delete user account"
-                        >
-                          <Trash2 size={15} /> Delete Account
-                        </button>
+                        {user.email.toLowerCase() === 'tuyenhv.142@gmail.com' ? (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', backgroundColor: '#fef2f2', color: '#dc2626', fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '10px', border: '1px solid #fecaca' }}>
+                            🔒 System Admin (Protected)
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleDeleteUser(user)}
+                            style={deleteBtnStyle}
+                            title="Force delete user account"
+                          >
+                            <Trash2 size={15} /> Delete Account
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))

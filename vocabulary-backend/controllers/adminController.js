@@ -83,8 +83,17 @@ async function getAllUsers(req, res) {
 async function deleteUserByAdmin(req, res) {
   if (!checkAdminAuth(req, res)) return;
   const { id: userId } = req.params;
-  const client = await db.pool.connect();
 
+  try {
+    const userCheck = await db.query('SELECT email FROM users WHERE id = $1', [userId]);
+    if (userCheck.rows.length > 0 && userCheck.rows[0].email.toLowerCase() === 'tuyenhv.142@gmail.com') {
+      return res.status(403).json({ error: 'System Administrator account (tuyenhv.142@gmail.com) is protected and cannot be deleted.' });
+    }
+  } catch (err) {
+    console.error('Check admin account error:', err);
+  }
+
+  const client = await db.pool.connect();
   try {
     await client.query('BEGIN');
 

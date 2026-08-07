@@ -92,6 +92,10 @@ export default function App() {
 
   const handleDeleteAccount = async () => {
     if (!user?.id) return;
+    if (user.email?.toLowerCase() === 'tuyenhv.142@gmail.com') {
+      alert('🛡️ System Administrator account (tuyenhv.142@gmail.com) is protected and cannot be deleted.');
+      return;
+    }
     const confirmed = window.confirm(
       'Are you sure you want to permanently delete your account and all your vocabulary sets? This action CANNOT be undone.'
     );
