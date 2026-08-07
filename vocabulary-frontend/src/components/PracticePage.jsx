@@ -113,7 +113,7 @@ function shuffle(array) {
 }
 
 function buildSessionQueue(cards, isEngToVie = true) {
-  return cards.map((card, index) => ({
+  const mapped = cards.map((card, index) => ({
     id: card.id ?? `${card.term}-${card.definition}-${index}`,
     term: card.term || '',
     definition: card.definition || '',
@@ -127,6 +127,7 @@ function buildSessionQueue(cards, isEngToVie = true) {
     lastReviewedAt: null,
     isEngToVie: isEngToVie,
   }));
+  return shuffle(mapped);
 }
 
 function getQuestionText(card) {
