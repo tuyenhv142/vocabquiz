@@ -926,9 +926,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
                     opacity: feedback && !highlighted ? 0.5 : 1,
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0, textAlign: 'left' }}>
                     <span style={hotkeyBadgeStyle}>[{index + 1}]</span>
-                    <span>{choice}</span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{choice}</span>
                   </div>
 
                   {showAsCorrect && (
@@ -1225,29 +1225,30 @@ const audioBtnStyle = {
 
 const optionsGridStyle = {
   display: 'grid',
-  gap: '10px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+  gap: '12px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
   width: '100%',
   maxWidth: '680px',
   margin: '0 auto',
 };
 
 const optionBtnStyle = {
-  padding: '10px 16px',
+  padding: '12px 16px',
   borderRadius: '14px',
   border: '1px solid #cbd5e1',
   backgroundColor: '#ffffff',
   fontSize: '0.925rem',
   cursor: 'pointer',
-  textAlign: 'center',
+  textAlign: 'left',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
+  justifyContent: 'space-between',
   gap: '10px',
-  minHeight: '48px',
+  minHeight: '52px',
+  height: '100%',
   boxSizing: 'border-box',
   transition: 'all 0.15s ease',
-  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
+  boxShadow: '0 2px 6px rgba(15, 23, 42, 0.03)',
 };
 
 const hotkeyBadgeStyle = {
