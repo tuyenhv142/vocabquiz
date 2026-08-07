@@ -397,7 +397,40 @@ async function sendVerificationEmail(email, code) {
     </div>
   `;
 
-  // 1. Try Resend HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
+  // 1. Try Brevo HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
+  const brevoApiKey = (process.env.BREVO_API_KEY || '').trim();
+  if (brevoApiKey) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: process.env.EMAIL_SENDER_NAME || 'VocabQuizWithNil',
+            email: process.env.SMTP_USER || 'tuyenhv.142@gmail.com',
+          },
+          to: [{ email }],
+          subject: `🔐 Your VocabQuiz Verification Code: ${code}`,
+          htmlContent: htmlContent,
+        }),
+      });
+
+      if (res.ok) {
+        console.log(`✅ [BREVO EMAIL SENT] Verification code ${code} sent to ${email}`);
+        return true;
+      } else {
+        const errData = await res.json();
+        console.error(`❌ [BREVO API ERROR for ${email}]:`, errData);
+      }
+    } catch (err) {
+      console.error(`❌ [BREVO HTTP ERROR for ${email}]:`, err.message);
+    }
+  }
+
+  // 2. Try Resend HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
   const resendApiKey = (process.env.RESEND_API_KEY || 're_TsG1YZR5_6me2sD7fPQH9TBbr1icLELP1').trim();
   if (resendApiKey) {
     try {
