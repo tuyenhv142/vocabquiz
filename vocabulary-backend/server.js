@@ -398,13 +398,20 @@ async function sendVerificationEmail(email, code) {
   const transporter = getMailTransporter();
 
   if (transporter) {
-    await transporter.sendMail(mailOptions);
-    console.log(`✅ [EMAIL SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`✅ [EMAIL SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
+      return true;
+    } catch (err) {
+      console.error(`❌ [SMTP MAIL ERROR for ${email}]:`, err.message);
+      return false;
+    }
   } else {
     console.log(`\n==============================================`);
     console.log(`🔑 [EMAIL VERIFICATION CODE FOR ${email}]`);
     console.log(`👉 CODE: ${code}`);
     console.log(`==============================================\n`);
+    return false;
   }
 }
 
@@ -419,7 +426,7 @@ app.post('/api/auth/send-otp', async (req, res) => {
   }
 
   try {
-    const existingUser = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const existingUser = await db.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
     if (existingUser.rows.length > 0) {
       return res.status(400).json({ error: 'Email is already registered. Please log in.' });
     }
@@ -434,19 +441,17 @@ app.post('/api/auth/send-otp', async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000,
     });
 
-    await sendVerificationEmail(email, code);
-
-    const isSmtpConfigured = !!process.env.SMTP_USER;
+    const emailSent = await sendVerificationEmail(email, code);
 
     res.json({
-      message: isSmtpConfigured
+      message: emailSent
         ? 'Verification code sent to your email.'
         : 'Verification code generated!',
-      devCode: isSmtpConfigured ? undefined : code,
+      devCode: emailSent ? undefined : code,
     });
   } catch (err) {
     console.error('Send OTP Error:', err);
-    res.status(500).json({ error: 'Failed to send verification email.' });
+    res.status(500).json({ error: 'Failed to generate verification code.' });
   }
 });
 
