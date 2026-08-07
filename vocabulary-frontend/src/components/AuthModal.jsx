@@ -66,7 +66,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setIsAwaitingOtp(true);
       if (data.devCode) {
         setOtpCode(data.devCode);
-        setInfoMessage(`🔑 Verification Code: ${data.devCode} (Dev mode)`);
+        setInfoMessage(`🔑 Verification Code: ${data.devCode} (Auto-filled)`);
       } else {
         setInfoMessage(`A 6-digit verification code has been sent to ${email}`);
       }

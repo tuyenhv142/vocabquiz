@@ -374,6 +374,9 @@ function getMailTransporter() {
       user: smtpUser,
       pass: smtpPass,
     },
+    connectionTimeout: 2500,
+    greetingTimeout: 2500,
+    socketTimeout: 3000,
   });
 }
 
@@ -399,7 +402,12 @@ async function sendVerificationEmail(email, code) {
 
   if (transporter) {
     try {
-      await transporter.sendMail(mailOptions);
+      const sendPromise = transporter.sendMail(mailOptions);
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('SMTP Connection timeout (2.5s limit reached)')), 2500)
+      );
+
+      await Promise.race([sendPromise, timeoutPromise]);
       console.log(`✅ [EMAIL SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
       return true;
     } catch (err) {
