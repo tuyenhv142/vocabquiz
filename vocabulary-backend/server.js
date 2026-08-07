@@ -288,7 +288,18 @@ app.post('/api/sets/:id/share-email', async (req, res) => {
     return res.status(400).json({ error: 'recipientEmail is required.' });
   }
 
+  const cleanRecipient = recipientEmail.trim().toLowerCase();
+
   try {
+    // 1. Check if recipient email exists in registered users table
+    const userCheck = await db.query('SELECT id, email FROM users WHERE LOWER(email) = $1', [cleanRecipient]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({
+        error: `Account "${cleanRecipient}" is not registered on VocabQuiz yet. Please ask them to sign up first, or share via direct link!`
+      });
+    }
+
+    // 2. Check study set
     const setRes = await db.query('SELECT * FROM study_sets WHERE id = $1', [setId]);
     if (setRes.rows.length === 0) {
       return res.status(404).json({ error: 'Study set not found' });
@@ -304,7 +315,8 @@ app.post('/api/sets/:id/share-email', async (req, res) => {
     }
 
     const link = shareUrl || `https://vocabquiz.vercel.app/?shareSetId=${setId}`;
-    const sender = senderEmail || 'VocabQuiz Master';
+    const sender = senderEmail || 'A VocabQuiz User';
+    const verifiedSenderEmail = process.env.SMTP_USER || 'tuyenhv.142@gmail.com';
 
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 28px; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
@@ -349,8 +361,8 @@ app.post('/api/sets/:id/share-email', async (req, res) => {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        sender: { name: 'VocabQuiz Master', email: 'hoangmit202@gmail.com' },
-        to: [{ email: recipientEmail }],
+        sender: { name: 'VocabQuiz Master', email: verifiedSenderEmail },
+        to: [{ email: cleanRecipient }],
         subject: `[VocabQuiz] ${sender} shared "${setInfo.title}" with you!`,
         htmlContent: htmlContent,
       }),
@@ -363,7 +375,7 @@ app.post('/api/sets/:id/share-email', async (req, res) => {
       return res.status(brevoResponse.status).json({ error: brevoData.message || 'Failed to send email via Brevo' });
     }
 
-    console.log(`✉️ [EMAIL SENT VIA BREVO] Shared set ${setId} sent to ${recipientEmail}`);
+    console.log(`✉️ [EMAIL SENT VIA BREVO] Shared set ${setId} sent to ${cleanRecipient}`);
     res.json({ success: true, messageId: brevoData.messageId });
   } catch (err) {
     console.error('Failed to send share email:', err);
