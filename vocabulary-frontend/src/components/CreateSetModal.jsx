@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { API_BASE } from '../config';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import {
@@ -700,9 +701,6 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
     if (validCards.length === 0) return alert('Please add at least one card with a term and definition.');
 
     setLoading(true);
-    const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
-      ? 'http://localhost:5000'
-      : '';
 
     try {
       const setRes = await fetch(`${API_BASE}/api/sets`, {

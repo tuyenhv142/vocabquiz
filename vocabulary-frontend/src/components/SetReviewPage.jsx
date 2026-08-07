@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { API_BASE } from '../config';
 import { formatChinesePinyin } from '../utils/pinyin';
 import {
   ArrowLeft,
@@ -817,9 +818,6 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
     setEditCards((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
-    ? 'http://localhost:5000'
-    : '';
 
   const deleteSet = async () => {
     if (!window.confirm('Delete this set and all its cards?')) return;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn, UserPlus, AlertCircle, KeyRound, CheckCircle2 } from 'lucide-react';
+import { API_BASE } from '../config';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -13,9 +14,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   if (!isOpen) return null;
 
-  const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
-    ? 'http://localhost:5000'
-    : '';
 
   const handleLogin = async (e) => {
     e.preventDefault();

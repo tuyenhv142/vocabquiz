@@ -6,11 +6,9 @@ import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Play } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck } from 'lucide-react';
 
-const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
-  ? 'http://localhost:5000'
-  : '';
+import { API_BASE } from './config';
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -57,23 +55,6 @@ export default function App() {
       setSelectedCards(data.cards || []);
       setIsEditingSet(false);
       setIsPracticing(false);
-    } catch (err) {
-      console.error(err);
-      alert(err.message || 'Unable to load the selected set.');
-    }
-  };
-
-  const loadSetDetailsAndPractice = async (setId) => {
-    try {
-      const response = await fetch(`${API_BASE}/api/sets/${setId}`);
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Could not load set details.');
-      }
-      setSelectedSet(data);
-      setSelectedCards(data.cards || []);
-      setIsEditingSet(false);
-      setIsPracticing(true);
     } catch (err) {
       console.error(err);
       alert(err.message || 'Unable to load the selected set.');
@@ -372,20 +353,12 @@ export default function App() {
                           )}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         <button
                           onClick={() => loadSetDetails(set.id)}
-                          style={{ ...secondaryBtnStyle, padding: '10px 16px' }}
-                          title="Review Flashcards"
-                        >
-                          <BookOpen size={15} /> Review
-                        </button>
-                        <button
-                          onClick={() => loadSetDetailsAndPractice(set.id)}
                           style={{ ...primaryBtnStyle, padding: '10px 18px' }}
-                          title="Start Practice Quiz"
                         >
-                          <Play size={15} /> Practice
+                          Review & Practice
                         </button>
                         <button
                           onClick={(e) => handleDeleteSet(set.id, set.title, e)}

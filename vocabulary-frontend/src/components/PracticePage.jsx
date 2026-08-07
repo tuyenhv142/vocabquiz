@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { API_BASE } from '../config';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -345,9 +346,6 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
     const pct = initialTotal > 0 ? Math.round((masteredCount / initialTotal) * 100) : 0;
 
     if (setInfo?.id && initialTotal > 0) {
-      const API_BASE = typeof window !== 'undefined' && window.location.origin.includes('5173')
-        ? 'http://localhost:5000'
-        : '';
       try {
         await fetch(`${API_BASE}/api/sets/${setInfo.id}/practice`, {
           method: 'PUT',
