@@ -6,7 +6,7 @@ import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -377,16 +377,25 @@ export default function App() {
                           {set.title}
                         </h3>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', fontSize: '0.8rem', color: '#64748b', marginBottom: '14px', flexWrap: 'wrap' }}>
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <BookOpen size={14} color="#3b82f6" />
-                            <strong>{set.card_count}</strong> {set.card_count === 1 ? 'word' : 'words'}
-                          </span>
-                          {hasPracticed && set.last_practiced && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: '#64748b', marginBottom: '14px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                              <Clock size={14} color="#94a3b8" />
-                              {new Date(set.last_practiced).toLocaleDateString()}
+                              <BookOpen size={14} color="#3b82f6" />
+                              <strong>{set.card_count}</strong> {set.card_count === 1 ? 'word' : 'words'}
                             </span>
+                            {set.created_at && (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#94a3b8' }} title="Ngày tạo bộ từ">
+                                <Calendar size={13} color="#94a3b8" />
+                                {new Date(set.created_at).toLocaleDateString('vi-VN')}
+                              </span>
+                            )}
+                          </div>
+
+                          {hasPracticed && set.last_practiced && (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.775rem', color: '#64748b' }} title="Lần luyện tập gần nhất">
+                              <Clock size={13} color="#64748b" />
+                              <span>Đã luyện: {new Date(set.last_practiced).toLocaleDateString('vi-VN')}</span>
+                            </div>
                           )}
                         </div>
 
