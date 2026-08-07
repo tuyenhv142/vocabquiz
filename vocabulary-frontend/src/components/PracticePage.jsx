@@ -332,7 +332,14 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
 
       if (feedback) return;
 
-      // Don't intercept number keys if typing in text input
+      // Ctrl key triggers audio pronunciation in both Multiple Choice and Written Input mode
+      if (e.key === 'Control' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+        e.preventDefault();
+        playPronunciation(currentCard?.term || questionText);
+        return;
+      }
+
+      // Don't intercept number or space keys if typing in text input box
       if (practiceMode === QuestionType.WRITTEN_INPUT) return;
 
       if (e.key === ' ' || e.code === 'Space') {
@@ -878,7 +885,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.725rem', color: '#64748b' }}>
             <Keyboard size={13} />
-            <span>Keys 1-4 for options • Space for Audio</span>
+            <span>Keys 1-4 for options • Ctrl or Space for Audio</span>
           </div>
         </div>
       </div>
@@ -908,7 +915,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
           <button
             onClick={() => playPronunciation(currentCard?.term || questionText)}
             style={audioBtnStyle}
-            title="Listen to English pronunciation (Press Spacebar)"
+            title="Listen to English pronunciation (Press Ctrl or Spacebar)"
             aria-label="Listen to English pronunciation"
           >
             <Volume2 size={22} />
