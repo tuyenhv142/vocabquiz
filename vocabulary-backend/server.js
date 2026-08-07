@@ -278,6 +278,100 @@ app.post('/api/sets/:id/clone', async (req, res) => {
 });
 
 // ----------------------------------------------------
+// 4d. POST /api/sets/:id/share-email - Send share set invitation via Brevo Email API
+// ----------------------------------------------------
+app.post('/api/sets/:id/share-email', async (req, res) => {
+  const { id: setId } = req.params;
+  const { recipientEmail, senderEmail, shareUrl } = req.body;
+
+  if (!recipientEmail) {
+    return res.status(400).json({ error: 'recipientEmail is required.' });
+  }
+
+  try {
+    const setRes = await db.query('SELECT * FROM study_sets WHERE id = $1', [setId]);
+    if (setRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Study set not found' });
+    }
+
+    const setInfo = setRes.rows[0];
+    const cardsRes = await db.query('SELECT COUNT(*)::int as card_count FROM cards WHERE set_id = $1', [setId]);
+    const cardCount = cardsRes.rows[0]?.card_count || 0;
+
+    const brevoApiKey = process.env.BREVO_API_KEY;
+    if (!brevoApiKey) {
+      return res.status(500).json({ error: 'BREVO_API_KEY is not configured on server.' });
+    }
+
+    const link = shareUrl || `https://vocabquiz.vercel.app/?shareSetId=${setId}`;
+    const sender = senderEmail || 'VocabQuiz Master';
+
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 28px; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <span style="background-color: #eff6ff; color: #2563eb; font-size: 11px; font-weight: 800; padding: 5px 14px; border-radius: 12px; letter-spacing: 0.12em; text-transform: uppercase;">
+            VocabQuiz Shared Set
+          </span>
+          <h2 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 14px 0 6px;">
+            ${sender} shared a vocabulary set with you!
+          </h2>
+          <p style="color: #64748b; font-size: 14px; margin: 0;">
+            Study flashcards and test your mastery with adaptive quizzes.
+          </p>
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; text-align: center; margin-bottom: 24px;">
+          <h3 style="color: #0f172a; font-size: 18px; font-weight: 800; margin: 0 0 6px;">
+            ${setInfo.title}
+          </h3>
+          ${setInfo.description ? `<p style="color: #64748b; font-size: 13px; margin: 0 0 12px;">${setInfo.description}</p>` : ''}
+          <div style="display: inline-block; background-color: #e0e7ff; color: #4338ca; font-size: 13px; font-weight: 800; padding: 5px 14px; border-radius: 12px;">
+            📚 ${cardCount} Vocabulary Words
+          </div>
+        </div>
+
+        <div style="text-align: center;">
+          <a href="${link}" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 15px; font-weight: 800; padding: 14px 32px; border-radius: 14px; text-decoration: none; box-shadow: 0 6px 18px rgba(37,99,235,0.25);">
+            Import Set to My Account 🚀
+          </a>
+          <p style="color: #94a3b8; font-size: 12px; margin-top: 16px;">
+            Direct link: <a href="${link}" style="color: #2563eb; font-weight: 600;">${link}</a>
+          </p>
+        </div>
+      </div>
+    `;
+
+    const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': brevoApiKey,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        sender: { name: 'VocabQuiz Master', email: 'hoangmit202@gmail.com' },
+        to: [{ email: recipientEmail }],
+        subject: `[VocabQuiz] ${sender} shared "${setInfo.title}" with you!`,
+        htmlContent: htmlContent,
+      }),
+    });
+
+    const brevoData = await brevoResponse.json();
+
+    if (!brevoResponse.ok) {
+      console.error('Brevo API Error:', brevoData);
+      return res.status(brevoResponse.status).json({ error: brevoData.message || 'Failed to send email via Brevo' });
+    }
+
+    console.log(`✉️ [EMAIL SENT VIA BREVO] Shared set ${setId} sent to ${recipientEmail}`);
+    res.json({ success: true, messageId: brevoData.messageId });
+  } catch (err) {
+    console.error('Failed to send share email:', err);
+    res.status(500).json({ error: 'Failed to send share email' });
+  }
+});
+
+// ----------------------------------------------------
 // 5. POST /api/sets/:id/cards/batch - Bulk Import Words
 // ----------------------------------------------------
 app.post('/api/sets/:id/cards/batch', async (req, res) => {

@@ -603,6 +603,7 @@ export default function App() {
       <ShareSetModal
         isOpen={isShareOpen}
         setInfo={shareTargetSet}
+        user={user}
         onClose={() => setIsShareOpen(false)}
       />
 

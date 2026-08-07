@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { Share2, Copy, Check, Send, Mail, X, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { Share2, Copy, Check, Send, Mail, X, Link as LinkIcon, Sparkles, AlertCircle } from 'lucide-react';
+import { API_BASE } from '../config';
 
-export default function ShareSetModal({ setInfo, isOpen, onClose }) {
+export default function ShareSetModal({ setInfo, user, isOpen, onClose }) {
   const [copied, setCopied] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
+  const [sending, setSending] = useState(false);
   const [sentMessage, setSentMessage] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
 
   if (!isOpen || !setInfo) return null;
 
@@ -16,20 +19,39 @@ export default function ShareSetModal({ setInfo, isOpen, onClose }) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSendEmail = (e) => {
+  const handleSendEmail = async (e) => {
     e.preventDefault();
-    if (!recipientEmail.trim()) return;
+    if (!recipientEmail.trim() || sending) return;
 
-    // Mailto fallback link or toast notification
-    const subject = encodeURIComponent(`Study Vocabulary Set: ${setInfo.title}`);
-    const body = encodeURIComponent(
-      `Hi!\n\nI want to share my vocabulary set "${setInfo.title}" with you on VocabQuiz.\n\nClick the link below to import and practice this set:\n${shareUrl}\n\nHappy learning!`
-    );
-    window.open(`mailto:${recipientEmail.trim()}?subject=${subject}&body=${body}`, '_blank');
+    setSending(true);
+    setSentMessage(null);
+    setErrorMessage(null);
 
-    setSentMessage(`Share link opened in email client for ${recipientEmail.trim()}!`);
-    setRecipientEmail('');
-    setTimeout(() => setSentMessage(null), 3500);
+    try {
+      const res = await fetch(`${API_BASE}/api/sets/${setInfo.id}/share-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recipientEmail: recipientEmail.trim(),
+          senderEmail: user?.email || 'A VocabQuiz User',
+          shareUrl,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to send email.');
+      }
+
+      setSentMessage(`🎉 Invitation email sent directly to ${recipientEmail.trim()}!`);
+      setRecipientEmail('');
+      setSending(false);
+      setTimeout(() => setSentMessage(null), 4000);
+    } catch (err) {
+      console.error(err);
+      setErrorMessage(err.message || 'Failed to send email.');
+      setSending(false);
+    }
   };
 
   return (
@@ -84,7 +106,7 @@ export default function ShareSetModal({ setInfo, isOpen, onClose }) {
           {/* Option 2: Share via Email */}
           <div>
             <label style={labelStyle}>
-              <Mail size={14} color="#2563eb" /> Send to Email
+              <Mail size={14} color="#2563eb" /> Send Email Invitation (via Brevo)
             </label>
             <form onSubmit={handleSendEmail} style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
               <input
@@ -93,23 +115,30 @@ export default function ShareSetModal({ setInfo, isOpen, onClose }) {
                 value={recipientEmail}
                 onChange={(e) => setRecipientEmail(e.target.value)}
                 style={inputStyle}
+                disabled={sending}
               />
               <button
                 type="submit"
-                disabled={!recipientEmail.trim()}
+                disabled={!recipientEmail.trim() || sending}
                 style={{
                   ...sendBtnStyle,
-                  opacity: recipientEmail.trim() ? 1 : 0.6,
+                  opacity: recipientEmail.trim() && !sending ? 1 : 0.6,
                 }}
               >
                 <Send size={15} />
-                <span>Send</span>
+                <span>{sending ? 'Sending...' : 'Send Email'}</span>
               </button>
             </form>
 
             {sentMessage && (
               <div style={toastStyle}>
                 <Sparkles size={14} /> {sentMessage}
+              </div>
+            )}
+
+            {errorMessage && (
+              <div style={{ ...toastStyle, backgroundColor: '#fef2f2', borderColor: '#fecaca', color: '#dc2626' }}>
+                <AlertCircle size={14} /> {errorMessage}
               </div>
             )}
           </div>
