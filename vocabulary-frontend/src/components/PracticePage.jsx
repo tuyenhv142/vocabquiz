@@ -238,6 +238,11 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
   const [wrongCards, setWrongCards] = useState([]);
   const [slowCards, setSlowCards] = useState([]);
 
+  // Ref-backed accuracy tracking to prevent state lag
+  const firstAttemptSetRef = useRef(new Set());
+  const firstAttemptWrongSetRef = useRef(new Set());
+  const wrongCardsRef = useRef([]);
+
   const handleDirectionChange = (dir) => {
     setQuestionDirection(dir);
     const isEng = dir === 'termToDef';
@@ -285,6 +290,9 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     setWrongCards([]);
     setSlowCards([]);
     setQuestionTimings([]);
+    firstAttemptSetRef.current.clear();
+    firstAttemptWrongSetRef.current.clear();
+    wrongCardsRef.current = [];
   }, [cards, questionDirection]);
 
   const currentCard = sessionQueue[currentIndex] || null;
@@ -340,21 +348,26 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     setFeedback(null);
     setShowCorrection(false);
 
-    const initialTotal = cards.length > 0 ? cards.length : sessionQueue.length;
-    const wrongCount = wrongCards.length;
-    const masteredCount = Math.max(0, initialTotal - wrongCount);
-    const pct = initialTotal > 0 ? Math.round((masteredCount / initialTotal) * 100) : 0;
+    const totalUnique = cards.length > 0 ? cards.length : (sessionQueue.length || 1);
+    const wrongUniqueCount = firstAttemptWrongSetRef.current.size;
+    const masteredCount = Math.max(0, totalUnique - wrongUniqueCount);
+    const pct = Math.min(100, Math.max(0, Math.round((masteredCount / totalUnique) * 100)));
 
-    if (setInfo?.id && initialTotal > 0) {
+    console.log(`📊 [PRACTICE FINISHED] ${masteredCount}/${totalUnique} correct (${pct}%)`);
+
+    if (setInfo?.id && totalUnique > 0) {
       try {
         const res = await fetch(`${API_BASE}/api/sets/${setInfo.id}/practice`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ percentage: pct, score: masteredCount, total: initialTotal }),
+          body: JSON.stringify({ percentage: pct, score: masteredCount, total: totalUnique }),
         });
         if (res.ok) {
           const updatedSet = await res.json();
+          console.log(`✅ Backend returned updated set:`, updatedSet);
           onPracticeComplete?.(updatedSet);
+        } else {
+          console.error(`❌ Backend error status ${res.status}`);
         }
       } catch (err) {
         console.error('Failed to save practice results:', err);
@@ -364,6 +377,16 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
 
   const processQuestionAnswer = (isCorrect, chosenText) => {
     if (!currentCard || feedback) return;
+
+    const cardId = currentCard.id || currentCard.term;
+
+    // Track first-attempt accuracy
+    if (!firstAttemptSetRef.current.has(cardId)) {
+      firstAttemptSetRef.current.add(cardId);
+      if (!isCorrect) {
+        firstAttemptWrongSetRef.current.add(cardId);
+      }
+    }
 
     const timeTaken = Math.max(1, Math.round((Date.now() - questionStartTime) / 1000));
     const isSlow = timeTaken >= SLOW_TIME_THRESHOLD_SECONDS;
@@ -384,7 +407,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
       setSlowCards((prev) => {
         if (prev.some((c) => c.term === currentCard.term)) return prev;
         return [...prev, {
-          id: currentCard.id,
+          id: cardId,
           term: currentCard.term,
           definition: currentCard.definition,
           questionText,
@@ -395,17 +418,17 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     }
 
     if (!isCorrect) {
-      setWrongCards((prev) => {
-        if (prev.some((c) => c.term === currentCard.term)) return prev;
-        return [...prev, {
-          id: currentCard.id,
+      if (!wrongCardsRef.current.some((c) => c.id === cardId)) {
+        wrongCardsRef.current.push({
+          id: cardId,
           term: currentCard.term,
           definition: currentCard.definition,
           questionText,
           correctAnswer,
           userAnswer: chosenText,
-        }];
-      });
+        });
+        setWrongCards([...wrongCardsRef.current]);
+      }
     }
 
     let feedbackMsg = '';
