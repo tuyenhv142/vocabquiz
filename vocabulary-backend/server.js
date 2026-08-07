@@ -6,6 +6,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const setRoutes = require('./routes/setRoutes');
 const cardRoutes = require('./routes/cardRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 app.use(cors());
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use('/api', authRoutes);
 app.use('/api', setRoutes);
 app.use('/api', cardRoutes);
+app.use('/api', adminRoutes);
 
 // Health check & SPA Fallback for static frontend build
 const frontendDist = path.join(__dirname, '../vocabulary-frontend/dist');

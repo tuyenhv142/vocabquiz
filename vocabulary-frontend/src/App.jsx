@@ -8,8 +8,9 @@ import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import ShareSetModal from './components/ShareSetModal';
 import ImportSharedSetModal from './components/ImportSharedSetModal';
+import AdminDashboardPage from './components/AdminDashboardPage';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2 } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2, ShieldAlert } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -358,6 +359,14 @@ export default function App() {
               </span>
 
               <button
+                onClick={() => navigate('/admin')}
+                style={{ ...secondaryBtnStyle, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+                title="Open Admin Analytics & Data Management Dashboard"
+              >
+                <ShieldAlert size={15} color="#dc2626" /> Admin Portal
+              </button>
+
+              <button
                 onClick={handleLogout}
                 style={secondaryBtnStyle}
                 title="Log Out"
@@ -645,6 +654,7 @@ export default function App() {
             <Route path="/set/:setId" element={<SetFlashcardRoute />} />
             <Route path="/set/:setId/practice" element={<SetPracticeRoute />} />
             <Route path="/set/:setId/edit" element={<SetEditRoute />} />
+            <Route path="/admin" element={<AdminDashboardPage currentUser={user} />} />
           </Routes>
         )}
       </main>
