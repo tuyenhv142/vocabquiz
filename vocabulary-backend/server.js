@@ -52,7 +52,7 @@ app.get('/api/sets', async (req, res) => {
 // ----------------------------------------------------
 app.post('/api/sets', async (req, res) => {
   const { userId, title, description, isPublic } = req.body;
-  
+
   if (!userId || !title) {
     return res.status(400).json({ error: 'userId and title are required.' });
   }
@@ -361,26 +361,27 @@ const nodemailer = require('nodemailer');
 const otpStore = new Map();
 
 function getMailTransporter() {
-  const smtpUser = (process.env.SMTP_USER || 'tuyenhv.142@gmail.com').trim();
-  const rawPass = process.env.SMTP_PASS || 'katf anfb xfzn jarl';
+  const smtpUser = (process.env.BREVO_SMTP_USER || process.env.SMTP_USER || 'tuyenhv.142@gmail.com').trim();
+  const rawPass = process.env.BREVO_API_KEY || process.env.SMTP_PASS || 'xsmtpsib-2f5a1a019f0803d25d322e6083e310f6e0ed6c178b4801e712073729aac31720-g1ptXH89jboMGeYG';
   const smtpPass = rawPass.replace(/\s+/g, '');
 
   if (!smtpUser || !smtpPass) return null;
 
-  const port = parseInt(process.env.SMTP_PORT || '465');
-  const isSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
+  const host = process.env.SMTP_HOST || 'smtp-relay.brevo.com';
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const isSecure = process.env.SMTP_SECURE === 'true';
 
   return nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: host,
     port: port,
     secure: isSecure,
     auth: {
       user: smtpUser,
       pass: smtpPass,
     },
-    connectionTimeout: 1500,
-    greetingTimeout: 1500,
-    socketTimeout: 1500,
+    connectionTimeout: 2000,
+    greetingTimeout: 2000,
+    socketTimeout: 2000,
   });
 }
 
@@ -397,8 +398,8 @@ async function sendVerificationEmail(email, code) {
     </div>
   `;
 
-  // 1. Try Brevo HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
-  const brevoApiKey = (process.env.BREVO_API_KEY || '').trim();
+  // 1. Send via Brevo HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
+  const brevoApiKey = (process.env.BREVO_API_KEY || 'xsmtpsib-2f5a1a019f0803d25d322e6083e310f6e0ed6c178b4801e712073729aac31720-g1ptXH89jboMGeYG').trim();
   if (brevoApiKey) {
     try {
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -423,44 +424,14 @@ async function sendVerificationEmail(email, code) {
         return true;
       } else {
         const errData = await res.json();
-        console.error(`❌ [BREVO API ERROR for ${email}]:`, errData);
+        console.error(`❌ [BREVO API NOTICE for ${email}]:`, errData.message || errData);
       }
     } catch (err) {
       console.error(`❌ [BREVO HTTP ERROR for ${email}]:`, err.message);
     }
   }
 
-  // 2. Try Resend HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
-  const resendApiKey = (process.env.RESEND_API_KEY || 're_TsG1YZR5_6me2sD7fPQH9TBbr1icLELP1').trim();
-  if (resendApiKey) {
-    try {
-      const res = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: process.env.RESEND_FROM || 'VocabQuiz <onboarding@resend.dev>',
-          to: [email],
-          subject: `🔐 Your VocabQuiz Verification Code: ${code}`,
-          html: htmlContent,
-        }),
-      });
-
-      if (res.ok) {
-        console.log(`✅ [RESEND EMAIL SENT] Verification code ${code} sent to ${email}`);
-        return true;
-      } else {
-        const errData = await res.json();
-        console.error(`❌ [RESEND API ERROR for ${email}]:`, errData);
-      }
-    } catch (err) {
-      console.error(`❌ [RESEND HTTP ERROR for ${email}]:`, err.message);
-    }
-  }
-
-  // 2. Fallback to Nodemailer SMTP
+  // 2. Fallback to Brevo SMTP
   const defaultSender = process.env.SMTP_USER || 'tuyenhv.142@gmail.com';
   const mailOptions = {
     from: `"VocabQuizWithNil" <${defaultSender}>`,
@@ -475,14 +446,14 @@ async function sendVerificationEmail(email, code) {
     try {
       const sendPromise = transporter.sendMail(mailOptions);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('SMTP connection timed out (Render blocks outbound TCP ports 587/465). Use RESEND_API_KEY for instant HTTPS delivery.')), 1500)
+        setTimeout(() => reject(new Error('Brevo SMTP connection timed out')), 2000)
       );
 
       await Promise.race([sendPromise, timeoutPromise]);
-      console.log(`✅ [EMAIL SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
+      console.log(`✅ [BREVO SMTP SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
       return true;
     } catch (err) {
-      console.error(`❌ [SMTP MAIL NOTICE for ${email}]:`, err.message);
+      console.error(`❌ [BREVO SMTP NOTICE for ${email}]:`, err.message);
       return false;
     }
   } else {
@@ -760,4 +731,4 @@ if (require('fs').existsSync(indexPath)) {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-});
+});
