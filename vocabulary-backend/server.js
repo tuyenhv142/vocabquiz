@@ -398,9 +398,10 @@ async function sendVerificationEmail(email, code) {
     </div>
   `;
 
-  // 1. Send via Brevo HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
-  const brevoApiKey = (process.env.BREVO_API_KEY || 'xsmtpsib-2f5a1a019f0803d25d322e6083e310f6e0ed6c178b4801e712073729aac31720-g1ptXH89jboMGeYG').trim();
-  if (brevoApiKey) {
+  const brevoApiKey = (process.env.BREVO_API_KEY || '').trim();
+
+  // 1. Send via Brevo HTTPS REST API if a valid xkeysib API key is configured
+  if (brevoApiKey && brevoApiKey.startsWith('xkeysib-')) {
     try {
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
@@ -431,38 +432,12 @@ async function sendVerificationEmail(email, code) {
     }
   }
 
-  // 2. Fallback to Brevo SMTP
-  const defaultSender = process.env.SMTP_USER || 'tuyenhv.142@gmail.com';
-  const mailOptions = {
-    from: `"VocabQuizWithNil" <${defaultSender}>`,
-    to: email,
-    subject: `🔐 Your VocabQuiz Verification Code: ${code}`,
-    html: htmlContent,
-  };
-
-  const transporter = getMailTransporter();
-
-  if (transporter) {
-    try {
-      const sendPromise = transporter.sendMail(mailOptions);
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Brevo SMTP connection timed out')), 2000)
-      );
-
-      await Promise.race([sendPromise, timeoutPromise]);
-      console.log(`✅ [BREVO SMTP SENT SUCCESSFULLY] Verification code ${code} sent to ${email}`);
-      return true;
-    } catch (err) {
-      console.error(`❌ [BREVO SMTP NOTICE for ${email}]:`, err.message);
-      return false;
-    }
-  } else {
-    console.log(`\n==============================================`);
-    console.log(`🔑 [EMAIL VERIFICATION CODE FOR ${email}]`);
-    console.log(`👉 CODE: ${code}`);
-    console.log(`==============================================\n`);
-    return false;
-  }
+  // 2. Default instantaneous fallback (0ms) when no xkeysib API key is configured
+  console.log(`\n==============================================`);
+  console.log(`🔑 [VERIFICATION CODE GENERATED FOR ${email}]`);
+  console.log(`👉 CODE: ${code}`);
+  console.log(`==============================================\n`);
+  return false;
 }
 
 // ----------------------------------------------------
