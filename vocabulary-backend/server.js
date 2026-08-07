@@ -7,6 +7,8 @@ const jwt = require('jsonwebtoken');
 const db = require('./db');
 require('dotenv').config();
 
+const JWT_SECRET = process.env.JWT_SECRET || 'your_super_secret_jwt_key_here_12345';
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -481,7 +483,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
     const user = result.rows[0];
     otpStore.delete(email.toLowerCase());
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: '7d',
     });
 
@@ -522,7 +524,7 @@ app.post('/api/auth/signup', async (req, res) => {
     const user = result.rows[0];
 
     // Generate JWT Token
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: '7d',
     });
 
@@ -600,7 +602,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     // Generate JWT Token
-    const token = jwt.sign({ userId: user.id, email: user.email }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, {
       expiresIn: '7d',
     });
 
