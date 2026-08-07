@@ -397,13 +397,14 @@ async function sendVerificationEmail(email, code) {
     </div>
   `;
 
-  // 1. Try Resend HTTPS REST API if RESEND_API_KEY is configured (HTTPS Port 443 - Never blocked on Render)
-  if (process.env.RESEND_API_KEY) {
+  // 1. Try Resend HTTPS REST API (HTTPS Port 443 - Never blocked on Render)
+  const resendApiKey = (process.env.RESEND_API_KEY || 're_TsG1YZR5_6me2sD7fPQH9TBbr1icLELP1').trim();
+  if (resendApiKey) {
     try {
       const res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          'Authorization': `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
