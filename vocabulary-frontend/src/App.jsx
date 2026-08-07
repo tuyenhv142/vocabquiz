@@ -382,7 +382,7 @@ export default function App() {
                 </p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
                 {sets
                   .filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
                   .sort((a, b) => {

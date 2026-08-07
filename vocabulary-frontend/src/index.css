@@ -44,8 +44,8 @@ html, body {
 
 /* Responsive Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -61,9 +61,70 @@ html, body {
   background: #94a3b8;
 }
 
-/* Media Queries for Small Mobile Devices (< 640px) */
-@media (max-width: 640px) {
+/* Comprehensive Responsive Media Queries for Mobile & Tablet Devices */
+
+/* Tablet & Smaller Devices (<= 768px) */
+@media (max-width: 768px) {
   body {
     font-size: 14px;
+  }
+
+  /* Responsive Container & Padding */
+  div[style*="maxWidth: 1000px"],
+  div[style*="maxWidth: 920px"] {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  /* Responsive Modal Windows */
+  div[style*="position: fixed"],
+  div[style*="position: 'fixed'"] {
+    padding: 10px !important;
+  }
+
+  /* Auto wrap grid items for mobile */
+  .grid-responsive {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Mobile Phones (<= 520px) */
+@media (max-width: 520px) {
+  /* Compact Header adjustments */
+  header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+  }
+
+  header > div {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  /* Mobile Dashboard Set Cards */
+  div[style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Mobile Practice Options Grid */
+  div[style*="minmax(260px"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Touch-friendly buttons */
+  button {
+    touch-action: manipulation;
+  }
+
+  /* Modal Dialog Responsiveness */
+  div[style*="maxWidth: 520px"],
+  div[style*="maxWidth: 560px"],
+  div[style*="maxWidth: 600px"],
+  div[style*="maxWidth: 700px"] {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    margin: 8px auto !important;
   }
 }
