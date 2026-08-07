@@ -1039,9 +1039,9 @@ export default function PracticePage({ setInfo, cards = [], onBack }) {
 const pageStyle = {
   width: '100%',
   boxSizing: 'border-box',
-  padding: '18px',
+  padding: '8px 14px',
   fontFamily: 'Inter, ui-sans-serif, system-ui, sans-serif',
-  maxWidth: '1000px',
+  maxWidth: '920px',
   margin: '0 auto',
   color: '#0f172a',
   background: '#f8fafc',
@@ -1050,14 +1050,14 @@ const pageStyle = {
 const headerStyle = {
   display: 'flex',
   alignItems: 'center',
-  gap: '14px',
-  marginBottom: '16px',
+  gap: '12px',
+  marginBottom: '10px',
 };
 
 const backBtnStyle = {
-  width: '40px',
-  height: '40px',
-  borderRadius: '14px',
+  width: '36px',
+  height: '36px',
+  borderRadius: '12px',
   border: '1px solid rgba(148,163,184,0.18)',
   backgroundColor: '#ffffff',
   color: '#334155',
@@ -1065,6 +1065,7 @@ const backBtnStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   cursor: 'pointer',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
 };
 
 const eyebrowStyle = {
@@ -1074,7 +1075,7 @@ const eyebrowStyle = {
   color: '#2563eb',
   fontSize: '9px',
   fontWeight: 800,
-  marginBottom: '2px',
+  marginBottom: '1px',
 };
 
 const streakBadgeStyle = {
@@ -1083,22 +1084,22 @@ const streakBadgeStyle = {
   gap: '4px',
   backgroundColor: '#fef3c7',
   color: '#d97706',
-  padding: '3px 10px',
-  borderRadius: '20px',
-  fontSize: '0.75rem',
+  padding: '2px 8px',
+  borderRadius: '16px',
+  fontSize: '0.725rem',
   fontWeight: 800,
 };
 
 const titleStyle = {
   margin: 0,
-  fontSize: '1.4rem',
+  fontSize: '1.2rem',
   fontWeight: 800,
   color: '#0f172a',
 };
 
 const progressBarContainerStyle = {
   width: '100%',
-  height: '8px',
+  height: '6px',
   backgroundColor: '#e2e8f0',
   borderRadius: '10px',
   overflow: 'hidden',
@@ -1113,20 +1114,20 @@ const progressBarFillStyle = {
 
 const modeToolbarStyle = {
   display: 'flex',
-  justify: 'space-between',
+  justifyContent: 'space-between',
   alignItems: 'center',
   backgroundColor: '#f1f5f9',
   padding: '4px 8px',
   borderRadius: '12px',
   flexWrap: 'wrap',
-  gap: '8px',
+  gap: '6px',
 };
 
 const modeBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '6px',
-  padding: '6px 12px',
+  gap: '5px',
+  padding: '5px 10px',
   borderRadius: '8px',
   border: 'none',
   fontSize: '0.75rem',
@@ -1137,10 +1138,10 @@ const modeBtnStyle = {
 
 const cardStyle = {
   backgroundColor: '#ffffff',
-  borderRadius: '24px',
-  padding: 'clamp(20px, 4vw, 36px) clamp(16px, 3vw, 28px)',
+  borderRadius: '20px',
+  padding: '16px 20px',
   border: '1px solid #e2e8f0',
-  boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.07)',
+  boxShadow: '0 8px 24px -8px rgba(0, 0, 0, 0.05)',
   textAlign: 'center',
   display: 'flex',
   flexDirection: 'column',
@@ -1149,20 +1150,20 @@ const cardStyle = {
 
 const questionMetaStyle = {
   display: 'flex',
-  justify: 'center',
+  justifyContent: 'center',
   alignItems: 'center',
   width: '100%',
-  marginBottom: '20px',
-  gap: '12px',
+  marginBottom: '10px',
+  gap: '10px',
   flexWrap: 'wrap',
 };
 
 const questionContainerStyle = {
   display: 'flex',
   alignItems: 'center',
-  justify: 'center',
-  gap: '14px',
-  margin: '10px 0 28px',
+  justifyContent: 'center',
+  gap: '12px',
+  margin: '4px 0 16px',
   width: '100%',
   flexWrap: 'wrap',
 };
@@ -1171,12 +1172,12 @@ const hintBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '4px',
-  padding: '4px 10px',
-  borderRadius: '12px',
+  padding: '3px 8px',
+  borderRadius: '10px',
   border: '1px solid #fef08a',
   backgroundColor: '#fefce8',
   color: '#854d0e',
-  fontSize: '0.75rem',
+  fontSize: '0.725rem',
   fontWeight: 700,
   cursor: 'pointer',
 };
@@ -1185,20 +1186,20 @@ const hintBoxStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '10px',
+  gap: '8px',
   backgroundColor: '#fefce8',
   border: '1px solid #fef08a',
-  borderRadius: '14px',
-  padding: '12px 18px',
-  marginBottom: '24px',
-  maxWidth: '560px',
+  borderRadius: '12px',
+  padding: '8px 14px',
+  marginBottom: '14px',
+  maxWidth: '520px',
   width: '100%',
   boxSizing: 'border-box',
   textAlign: 'center',
 };
 
 const questionStyle = {
-  fontSize: 'clamp(1.5rem, 5vw, 2.2rem)',
+  fontSize: '1.75rem',
   fontWeight: 800,
   color: '#0f172a',
   textAlign: 'center',
@@ -1210,59 +1211,59 @@ const audioBtnStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  width: '44px',
-  height: '44px',
+  width: '38px',
+  height: '38px',
   borderRadius: '50%',
   border: '1px solid #bfdbfe',
   backgroundColor: '#eff6ff',
   color: '#2563eb',
   cursor: 'pointer',
-  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.15)',
+  boxShadow: '0 3px 10px rgba(37, 99, 235, 0.12)',
   transition: 'all 0.15s ease',
   flexShrink: 0,
 };
 
 const optionsGridStyle = {
   display: 'grid',
-  gap: '12px',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+  gap: '10px',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
   width: '100%',
-  maxWidth: '720px',
+  maxWidth: '680px',
   margin: '0 auto',
 };
 
 const optionBtnStyle = {
-  padding: '16px 20px',
-  borderRadius: '16px',
+  padding: '10px 16px',
+  borderRadius: '14px',
   border: '1px solid #cbd5e1',
   backgroundColor: '#ffffff',
-  fontSize: '1rem',
+  fontSize: '0.925rem',
   cursor: 'pointer',
   textAlign: 'center',
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  gap: '12px',
-  minHeight: '60px',
+  gap: '10px',
+  minHeight: '48px',
   boxSizing: 'border-box',
   transition: 'all 0.15s ease',
-  boxShadow: '0 2px 5px rgba(0, 0, 0, 0.02)',
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
 };
 
 const hotkeyBadgeStyle = {
-  fontSize: '0.7rem',
+  fontSize: '0.675rem',
   fontWeight: 800,
   color: '#64748b',
   backgroundColor: '#f1f5f9',
-  padding: '2px 6px',
+  padding: '2px 5px',
   borderRadius: '6px',
   border: '1px solid #cbd5e1',
 };
 
 const correctBadgeStyle = {
-  padding: '3px 10px',
-  borderRadius: '12px',
-  fontSize: '12px',
+  padding: '2px 8px',
+  borderRadius: '10px',
+  fontSize: '11px',
   fontWeight: 800,
   backgroundColor: '#16a34a',
   color: '#ffffff',
@@ -1270,9 +1271,9 @@ const correctBadgeStyle = {
 };
 
 const wrongBadgeStyle = {
-  padding: '3px 10px',
-  borderRadius: '12px',
-  fontSize: '12px',
+  padding: '2px 8px',
+  borderRadius: '10px',
+  fontSize: '11px',
   fontWeight: 800,
   backgroundColor: '#dc2626',
   color: '#ffffff',
@@ -1280,69 +1281,72 @@ const wrongBadgeStyle = {
 };
 
 const feedbackStyle = {
-  padding: '12px 16px',
-  borderRadius: '14px',
-  fontSize: '0.9rem',
+  padding: '8px 14px',
+  borderRadius: '12px',
+  fontSize: '0.85rem',
+  marginTop: '12px',
+  width: '100%',
+  maxWidth: '680px',
 };
 
 const achievementCardStyle = {
   backgroundColor: '#ffffff',
   borderRadius: '20px',
-  padding: '28px',
+  padding: '20px',
   border: '1px solid #e2e8f0',
   textAlign: 'center',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '16px',
-  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.05)',
+  gap: '12px',
+  boxShadow: '0 8px 20px -6px rgba(0, 0, 0, 0.04)',
 };
 
 const timeStatCardStyle = {
   backgroundColor: '#eff6ff',
   border: '1px solid #bfdbfe',
-  borderRadius: '16px',
-  padding: '12px 20px',
+  borderRadius: '14px',
+  padding: '10px 16px',
   textAlign: 'center',
   display: 'flex',
   flexDirection: 'column',
   alignItems: 'center',
-  gap: '4px',
-  minWidth: '110px',
+  gap: '2px',
+  minWidth: '100px',
 };
 
 const inputContainerStyle = {
   width: '100%',
-  maxWidth: '560px',
+  maxWidth: '520px',
   margin: '0 auto',
   display: 'grid',
-  gap: '14px',
+  gap: '10px',
 };
 
 const nextBtnStyle = {
-  padding: '12px 24px',
-  borderRadius: '14px',
+  padding: '10px 20px',
+  borderRadius: '12px',
   border: 'none',
   backgroundColor: '#2563eb',
   color: '#ffffff',
-  fontSize: '0.9rem',
+  fontSize: '0.85rem',
   fontWeight: 700,
   cursor: 'pointer',
 };
 
 const inputStyle = {
   width: '100%',
-  padding: '12px 16px',
-  borderRadius: '14px',
+  padding: '10px 14px',
+  borderRadius: '12px',
   border: '1px solid #cbd5e1',
-  fontSize: '1rem',
+  fontSize: '0.95rem',
   boxSizing: 'border-box',
   outline: 'none',
 };
 
 const emptyStyle = {
   textAlign: 'center',
-  padding: '40px',
+  padding: '30px',
   color: '#64748b',
   backgroundColor: '#ffffff',
   borderRadius: '16px',
