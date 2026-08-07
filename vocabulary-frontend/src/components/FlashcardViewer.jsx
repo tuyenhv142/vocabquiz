@@ -38,7 +38,11 @@ export default function FlashcardViewer({ cards = [] }) {
 
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.code === 'Space') {
+      if (event.key === 'Control' || event.code === 'ControlLeft' || event.code === 'ControlRight') {
+        if (currentCard?.term) {
+          speakTerm(currentCard.term);
+        }
+      } else if (event.code === 'Space') {
         event.preventDefault();
         handleFlip();
       } else if (event.code === 'ArrowRight') {
@@ -50,7 +54,7 @@ export default function FlashcardViewer({ cards = [] }) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleNext, handlePrev]);
+  }, [handleNext, handlePrev, currentCard?.term]);
 
   if (!cards.length) {
     return (
@@ -272,7 +276,7 @@ export default function FlashcardViewer({ cards = [] }) {
 
       {/* Keyboard Shortcuts Footer */}
       <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '0.725rem', color: '#94a3b8', fontWeight: 600 }}>
-        Shortcuts: <span style={keyBadgeStyle}>Space</span> Flip • <span style={keyBadgeStyle}>←</span> Prev • <span style={keyBadgeStyle}>→</span> Next
+        Shortcuts: <span style={keyBadgeStyle}>Ctrl</span> Audio • <span style={keyBadgeStyle}>Space</span> Flip • <span style={keyBadgeStyle}>←</span> Prev • <span style={keyBadgeStyle}>→</span> Next
       </div>
 
     </div>
