@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Volume2, ChevronLeft, ChevronRight, RotateCw, Sparkles, CheckCircle2 } from 'lucide-react';
-import { formatChinesePinyin } from '../utils/pinyin';
+import { formatChinesePinyin } from '../../utils/pinyin';
 
 export default function FlashcardViewer({ cards = [] }) {
   const [currentIndex, setCurrentIndex] = useState(0);

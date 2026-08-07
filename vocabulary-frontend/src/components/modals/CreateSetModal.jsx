@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { API_BASE } from '../config';
+import { API_BASE } from '../../config';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import {
@@ -18,7 +18,7 @@ import {
   FileCode,
   Zap,
 } from 'lucide-react';
-import { formatChinesePinyin } from '../utils/pinyin';
+import { formatChinesePinyin } from '../../utils/pinyin';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'vi', label: '🇻🇳 Vietnamese (Tiếng Việt)' },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Edit3, Play, BookOpen } from 'lucide-react';
-import FlashcardViewer from './FlashcardViewer';
+import FlashcardViewer from '../components/common/FlashcardViewer';
 
 export default function FlashcardPage({ setInfo, cards = [], onBack, onEdit, onPractice }) {
   const pct = setInfo?.practice_percentage;

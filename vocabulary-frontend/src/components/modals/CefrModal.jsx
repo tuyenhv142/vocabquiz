@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { BookOpen, Check, X, Sparkles } from 'lucide-react';
+import { BookOpen, Check, ArrowRight, X, Sparkles, Layers, ShieldCheck } from 'lucide-react';
+import { API_BASE } from '../../config';
 
 const CEFR_LEVELS = [
   { key: 'A1', name: 'Level A1', title: 'Beginner (Căn Bản)', desc: 'Basic everyday words: hello, apple, book, family...' },

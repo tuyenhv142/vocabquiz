@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, useParams, useLocation } from 'react-router-dom';
-import AuthModal from './components/AuthModal';
-import CreateSetModal from './components/CreateSetModal';
-import FlashcardPage from './components/FlashcardPage';
-import SetReviewPage from './components/SetReviewPage';
-import PracticePage from './components/PracticePage';
-import CefrModal from './components/CefrModal';
-import ShareSetModal from './components/ShareSetModal';
-import ImportSharedSetModal from './components/ImportSharedSetModal';
-import AdminDashboardPage from './components/AdminDashboardPage';
+import AuthModal from './components/modals/AuthModal';
+import CreateSetModal from './components/modals/CreateSetModal';
+import CefrModal from './components/modals/CefrModal';
+import ShareSetModal from './components/modals/ShareSetModal';
+import ImportSharedSetModal from './components/modals/ImportSharedSetModal';
+
+import FlashcardPage from './pages/FlashcardPage';
+import SetEditPage from './pages/SetEditPage';
+import PracticePage from './pages/PracticePage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import logoImg from './assets/logo.jpg';
 import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2, ShieldAlert } from 'lucide-react';
 
@@ -317,7 +318,7 @@ export default function App() {
     }
 
     return (
-      <SetReviewPage
+      <SetEditPage
         setInfo={selectedSet}
         cards={selectedCards}
         onClose={() => navigate(`/set/${setId}`)}

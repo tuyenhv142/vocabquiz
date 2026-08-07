@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, LogIn, UserPlus, AlertCircle, KeyRound, CheckCircle2, Loader2 } from 'lucide-react';
-import { API_BASE } from '../config';
+import { API_BASE } from '../../config';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [authView, setAuthView] = useState('login'); // 'login', 'signup', 'forgot'

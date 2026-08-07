@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Share2, Copy, Check, Send, Mail, X, Link as LinkIcon, Sparkles, AlertCircle } from 'lucide-react';
-import { API_BASE } from '../config';
+import { API_BASE } from '../../config';
 
 export default function ShareSetModal({ setInfo, user, isOpen, onClose }) {
   const [copied, setCopied] = useState(false);

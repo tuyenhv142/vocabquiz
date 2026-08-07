@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Download, BookOpen, UserCheck, X, Sparkles, AlertCircle } from 'lucide-react';
-import { API_BASE } from '../config';
+import { API_BASE } from '../../config';
 
 export default function ImportSharedSetModal({ setId, user, isOpen, onClose, onImportSuccess, onOpenAuth }) {
   const [setDetails, setSetDetails] = useState(null);
