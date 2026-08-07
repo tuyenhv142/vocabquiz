@@ -384,17 +384,17 @@ export default function App() {
                               <strong>{set.card_count}</strong> {set.card_count === 1 ? 'word' : 'words'}
                             </span>
                             {set.created_at && (
-                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#94a3b8' }} title="Ngày tạo bộ từ">
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#94a3b8' }} title="Created date">
                                 <Calendar size={13} color="#94a3b8" />
-                                {new Date(set.created_at).toLocaleDateString('vi-VN')}
+                                Created {new Date(set.created_at).toLocaleDateString()}
                               </span>
                             )}
                           </div>
 
                           {hasPracticed && set.last_practiced && (
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.775rem', color: '#64748b' }} title="Lần luyện tập gần nhất">
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.775rem', color: '#64748b' }} title="Last practiced date">
                               <Clock size={13} color="#64748b" />
-                              <span>Đã luyện: {new Date(set.last_practiced).toLocaleDateString('vi-VN')}</span>
+                              <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
                             </div>
                           )}
                         </div>
