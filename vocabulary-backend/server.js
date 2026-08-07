@@ -647,14 +647,21 @@ app.put('/api/sets/:id/practice', async (req, res) => {
   }
 });
 
-// Serve static production build of vocabulary-frontend
+// Serve static production build of vocabulary-frontend if dist exists, or healthcheck
 const frontendDist = path.join(__dirname, '../vocabulary-frontend/dist');
-app.use(express.static(frontendDist));
+const indexPath = path.join(frontendDist, 'index.html');
 
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) return next();
-  res.sendFile(path.join(frontendDist, 'index.html'));
-});
+if (require('fs').existsSync(indexPath)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) return next();
+    res.sendFile(indexPath);
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.json({ status: 'ok', message: 'VocabQuiz Backend API is running!' });
+  });
+}
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
