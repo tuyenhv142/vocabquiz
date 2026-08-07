@@ -486,7 +486,15 @@ app.post('/api/auth/send-otp', async (req, res) => {
       expiresAt: Date.now() + 10 * 60 * 1000,
     });
 
-    const emailSent = await sendVerificationEmail(email, code);
+    let emailSent = false;
+    try {
+      emailSent = await Promise.race([
+        sendVerificationEmail(email, code),
+        new Promise((resolve) => setTimeout(() => resolve(false), 1000)),
+      ]);
+    } catch (e) {
+      emailSent = false;
+    }
 
     res.json({
       message: emailSent
