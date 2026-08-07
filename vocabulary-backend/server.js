@@ -361,8 +361,9 @@ const nodemailer = require('nodemailer');
 const otpStore = new Map();
 
 function getMailTransporter() {
-  const smtpUser = process.env.SMTP_USER ? process.env.SMTP_USER.trim() : '';
-  const smtpPass = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
+  const smtpUser = (process.env.SMTP_USER || 'tuyenhv.142@gmail.com').trim();
+  const rawPass = process.env.SMTP_PASS || 'katf anfb xfzn jarl';
+  const smtpPass = rawPass.replace(/\s+/g, '');
 
   if (!smtpUser || !smtpPass) return null;
 
@@ -377,9 +378,9 @@ function getMailTransporter() {
       user: smtpUser,
       pass: smtpPass,
     },
-    connectionTimeout: 3000,
-    greetingTimeout: 3000,
-    socketTimeout: 3500,
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+    socketTimeout: 8000,
   });
 }
 
@@ -425,9 +426,10 @@ async function sendVerificationEmail(email, code) {
     }
   }
 
-  // 2. Fallback to Nodemailer SMTP (Port 465 SSL or Port 587)
+  // 2. Fallback to Nodemailer SMTP (Port 465 SSL default)
+  const defaultSender = process.env.SMTP_USER || 'tuyenhv.142@gmail.com';
   const mailOptions = {
-    from: `"VocabQuizWithNil" <${process.env.SMTP_USER || 'noreply@vocabquiz.com'}>`,
+    from: `"VocabQuizWithNil" <${defaultSender}>`,
     to: email,
     subject: `🔐 Your VocabQuiz Verification Code: ${code}`,
     html: htmlContent,
@@ -439,7 +441,7 @@ async function sendVerificationEmail(email, code) {
     try {
       const sendPromise = transporter.sendMail(mailOptions);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('SMTP Connection timeout (3s limit reached)')), 3000)
+        setTimeout(() => reject(new Error('SMTP Connection timeout (8s limit reached)')), 8000)
       );
 
       await Promise.race([sendPromise, timeoutPromise]);
