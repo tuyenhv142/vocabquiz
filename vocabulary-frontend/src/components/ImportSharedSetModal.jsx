@@ -14,9 +14,14 @@ export default function ImportSharedSetModal({ setId, user, isOpen, onClose, onI
     setError(null);
 
     fetch(`${API_BASE}/api/sets/${setId}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('Shared set not found or link expired.');
-        return res.json();
+      .then(async (res) => {
+        const contentType = res.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Shared set not found or server is updating.');
+        }
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Shared set not found.');
+        return data;
       })
       .then((data) => {
         setSetDetails(data);
@@ -46,6 +51,11 @@ export default function ImportSharedSetModal({ setId, user, isOpen, onClose, onI
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),
       });
+
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Server API is updating on Render. Please try again in 30 seconds.');
+      }
 
       const data = await res.json();
       if (!res.ok) {
