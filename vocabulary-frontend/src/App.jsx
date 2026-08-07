@@ -200,11 +200,18 @@ export default function App() {
 
       {/* Top Navigation Bar */}
       <header style={headerStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <img
             src={logoImg}
             alt="VocabQuiz Logo"
-            style={{ width: '48px', height: '48px', borderRadius: '16px', objectFit: 'cover', boxShadow: '0 6px 16px rgba(0,0,0,0.08)' }}
+            style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              objectFit: 'cover',
+              border: '1px solid #dbeafe',
+              boxShadow: '0 4px 10px rgba(37, 99, 235, 0.12)',
+            }}
           />
           <div>
             <span style={eyebrowStyle}>Vocabulary Master</span>
@@ -214,7 +221,7 @@ export default function App() {
 
         <div>
           {user ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <span style={userBadgeStyle}>
                 <UserCheck size={14} color="#2563eb" /> {user.email}
               </span>
@@ -560,13 +567,16 @@ const pageStyle = {
 
 const headerStyle = {
   display: 'flex',
-  justify: 'space-between',
+  justifyContent: 'space-between',
   alignItems: 'center',
-  marginBottom: '28px',
-  paddingBottom: '18px',
-  borderBottom: '1px solid #e2e8f0',
+  marginBottom: '20px',
+  padding: '12px 18px',
+  backgroundColor: '#ffffff',
+  borderRadius: '18px',
+  border: '1px solid #e2e8f0',
+  boxShadow: '0 4px 16px -2px rgba(15, 23, 42, 0.05)',
   flexWrap: 'wrap',
-  gap: '16px',
+  gap: '12px',
 };
 
 const eyebrowStyle = {
@@ -576,35 +586,39 @@ const eyebrowStyle = {
   color: '#2563eb',
   fontSize: '9px',
   fontWeight: 800,
-  marginBottom: '2px',
+  marginBottom: '1px',
 };
 
 const titleStyle = {
   margin: 0,
-  fontSize: '1.4rem',
+  fontSize: '1.3rem',
   fontWeight: 800,
   color: '#0f172a',
 };
 
 const primaryBtnStyle = {
-  padding: '12px 20px',
-  borderRadius: '14px',
+  height: '40px',
+  padding: '0 18px',
+  borderRadius: '12px',
   border: 'none',
   backgroundColor: '#2563eb',
   color: '#ffffff',
-  fontSize: '0.9rem',
+  fontSize: '0.85rem',
   fontWeight: 700,
   cursor: 'pointer',
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: '6px',
-  boxShadow: '0 4px 14px rgba(37,99,235,0.2)',
+  boxShadow: '0 4px 12px rgba(37,99,235,0.18)',
   transition: 'all 0.15s ease',
+  boxSizing: 'border-box',
 };
 
 const secondaryBtnStyle = {
-  padding: '12px 18px',
-  borderRadius: '14px',
+  height: '40px',
+  padding: '0 16px',
+  borderRadius: '12px',
   border: '1px solid #cbd5e1',
   backgroundColor: '#ffffff',
   color: '#334155',
@@ -613,14 +627,17 @@ const secondaryBtnStyle = {
   cursor: 'pointer',
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: '6px',
-  boxShadow: '0 2px 5px rgba(0,0,0,0.02)',
+  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
   transition: 'all 0.15s ease',
+  boxSizing: 'border-box',
 };
 
 const dangerBtnStyle = {
-  padding: '12px 16px',
-  borderRadius: '14px',
+  height: '40px',
+  padding: '0 14px',
+  borderRadius: '12px',
   border: '1px solid #fecaca',
   backgroundColor: '#fef2f2',
   color: '#dc2626',
@@ -629,21 +646,25 @@ const dangerBtnStyle = {
   cursor: 'pointer',
   display: 'inline-flex',
   alignItems: 'center',
+  justifyContent: 'center',
   gap: '6px',
   transition: 'all 0.15s ease',
+  boxSizing: 'border-box',
 };
 
 const userBadgeStyle = {
+  height: '40px',
   display: 'inline-flex',
   alignItems: 'center',
   gap: '6px',
-  padding: '8px 14px',
-  borderRadius: '20px',
+  padding: '0 14px',
+  borderRadius: '12px',
   backgroundColor: '#eff6ff',
   color: '#1e40af',
   fontSize: '0.825rem',
   fontWeight: 700,
   border: '1px solid #bfdbfe',
+  boxSizing: 'border-box',
 };
 
 const welcomeCardStyle = {
