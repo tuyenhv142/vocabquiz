@@ -8,6 +8,9 @@ import { API_BASE } from '../config';
 
 export default function AdminDashboardPage({ currentUser }) {
   const navigate = useNavigate();
+  const ADMIN_EMAIL = 'tuyenhv.142@gmail.com';
+  const isAdmin = currentUser?.email?.toLowerCase() === ADMIN_EMAIL;
+
   const [activeTab, setActiveTab] = useState('users'); // 'users', 'sets', 'cards'
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -19,15 +22,18 @@ export default function AdminDashboardPage({ currentUser }) {
   const [actionSuccess, setActionSuccess] = useState(null);
 
   const loadAdminData = async () => {
+    if (!isAdmin) return;
     setLoading(true);
     setActionError(null);
 
+    const headers = { 'x-user-email': currentUser?.email || '' };
+
     try {
       const [statsRes, usersRes, setsRes, cardsRes] = await Promise.all([
-        fetch(`${API_BASE}/api/admin/stats`),
-        fetch(`${API_BASE}/api/admin/users`),
-        fetch(`${API_BASE}/api/admin/sets`),
-        fetch(`${API_BASE}/api/admin/cards`),
+        fetch(`${API_BASE}/api/admin/stats`, { headers }),
+        fetch(`${API_BASE}/api/admin/users`, { headers }),
+        fetch(`${API_BASE}/api/admin/sets`, { headers }),
+        fetch(`${API_BASE}/api/admin/cards`, { headers }),
       ]);
 
       if (statsRes.ok) setStats(await statsRes.json());
@@ -44,7 +50,25 @@ export default function AdminDashboardPage({ currentUser }) {
 
   useEffect(() => {
     loadAdminData();
-  }, []);
+  }, [currentUser?.email]);
+
+  if (!isAdmin) {
+    return (
+      <div style={{ padding: '60px 20px', textAlign: 'center', maxWidth: '500px', margin: '40px auto', backgroundColor: '#ffffff', borderRadius: '24px', border: '1px solid #fecaca', boxShadow: '0 20px 40px rgba(220,38,38,0.08)' }}>
+        <ShieldAlert size={56} color="#dc2626" style={{ marginBottom: '16px' }} />
+        <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: '#991b1b', margin: '0 0 8px' }}>Access Denied (403 Forbidden)</h2>
+        <p style={{ color: '#64748b', fontSize: '0.95rem', margin: '0 0 24px', lineHeight: 1.5 }}>
+          Only authorized platform administrators (<strong>tuyenhv.142@gmail.com</strong>) are permitted to access this management dashboard.
+        </p>
+        <button
+          onClick={() => navigate('/')}
+          style={{ padding: '12px 24px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '12px', fontWeight: 800, cursor: 'pointer' }}
+        >
+          Return to Dashboard
+        </button>
+      </div>
+    );
+  }
 
   const handleDeleteUser = async (user) => {
     const confirmed = window.confirm(
@@ -53,7 +77,10 @@ export default function AdminDashboardPage({ currentUser }) {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/users/${user.id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/admin/users/${user.id}`, {
+        method: 'DELETE',
+        headers: { 'x-user-email': currentUser?.email || '' },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete user.');
 
@@ -73,7 +100,10 @@ export default function AdminDashboardPage({ currentUser }) {
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`${API_BASE}/api/admin/sets/${set.id}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/api/admin/sets/${set.id}`, {
+        method: 'DELETE',
+        headers: { 'x-user-email': currentUser?.email || '' },
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to delete set.');
 

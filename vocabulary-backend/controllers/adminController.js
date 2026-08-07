@@ -1,9 +1,21 @@
 const db = require('../db');
 
+const ADMIN_EMAIL = 'tuyenhv.142@gmail.com';
+
+function checkAdminAuth(req, res) {
+  const userEmail = (req.headers['x-user-email'] || req.query.adminEmail || '').trim().toLowerCase();
+  if (userEmail !== ADMIN_EMAIL) {
+    res.status(403).json({ error: 'Access Denied (403 Forbidden). Admin privileges required.' });
+    return false;
+  }
+  return true;
+}
+
 /**
  * GET /api/admin/stats - High-level system analytics
  */
 async function getAdminStats(req, res) {
+  if (!checkAdminAuth(req, res)) return;
   try {
     const userCountRes = await db.query('SELECT COUNT(*)::int AS count FROM users');
     const setCountRes = await db.query('SELECT COUNT(*)::int AS count FROM study_sets');
@@ -45,6 +57,7 @@ async function getAdminStats(req, res) {
  * GET /api/admin/users - All registered users with details
  */
 async function getAllUsers(req, res) {
+  if (!checkAdminAuth(req, res)) return;
   try {
     const result = await db.query(
       `SELECT 
@@ -68,6 +81,7 @@ async function getAllUsers(req, res) {
  * DELETE /api/admin/users/:id - Admin force delete user
  */
 async function deleteUserByAdmin(req, res) {
+  if (!checkAdminAuth(req, res)) return;
   const { id: userId } = req.params;
   const client = await db.pool.connect();
 
@@ -103,6 +117,7 @@ async function deleteUserByAdmin(req, res) {
  * GET /api/admin/sets - All study sets across system
  */
 async function getAllSets(req, res) {
+  if (!checkAdminAuth(req, res)) return;
   try {
     const result = await db.query(
       `SELECT 
@@ -126,6 +141,7 @@ async function getAllSets(req, res) {
  * DELETE /api/admin/sets/:id - Admin force delete set
  */
 async function deleteSetByAdmin(req, res) {
+  if (!checkAdminAuth(req, res)) return;
   const { id: setId } = req.params;
   const client = await db.pool.connect();
 
@@ -155,6 +171,7 @@ async function deleteSetByAdmin(req, res) {
  * GET /api/admin/cards - All vocabulary cards across system
  */
 async function getAllCards(req, res) {
+  if (!checkAdminAuth(req, res)) return;
   try {
     const result = await db.query(
       `SELECT 

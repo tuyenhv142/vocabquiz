@@ -358,13 +358,15 @@ export default function App() {
                 <UserCheck size={14} color="#2563eb" /> {user.email}
               </span>
 
-              <button
-                onClick={() => navigate('/admin')}
-                style={{ ...secondaryBtnStyle, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
-                title="Open Admin Analytics & Data Management Dashboard"
-              >
-                <ShieldAlert size={15} color="#dc2626" /> Admin Portal
-              </button>
+              {user.email?.toLowerCase() === 'tuyenhv.142@gmail.com' && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  style={{ ...secondaryBtnStyle, color: '#dc2626', borderColor: '#fecaca', backgroundColor: '#fef2f2' }}
+                  title="Open Admin Analytics & Data Management Dashboard"
+                >
+                  <ShieldAlert size={15} color="#dc2626" /> Admin Portal
+                </button>
+              )}
 
               <button
                 onClick={handleLogout}
