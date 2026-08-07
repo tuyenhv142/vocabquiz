@@ -366,36 +366,71 @@ function getMailTransporter() {
 
   if (!smtpUser || !smtpPass) return null;
 
+  const port = parseInt(process.env.SMTP_PORT || '465');
+  const isSecure = process.env.SMTP_SECURE !== undefined ? process.env.SMTP_SECURE === 'true' : port === 465;
+
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: process.env.SMTP_SECURE === 'true',
+    port: port,
+    secure: isSecure,
     auth: {
       user: smtpUser,
       pass: smtpPass,
     },
-    connectionTimeout: 2500,
-    greetingTimeout: 2500,
-    socketTimeout: 3000,
+    connectionTimeout: 3000,
+    greetingTimeout: 3000,
+    socketTimeout: 3500,
   });
 }
 
 async function sendVerificationEmail(email, code) {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
+      <h2 style="color: #2563eb; text-align: center; margin-bottom: 20px;">VocabQuizWithNil</h2>
+      <p style="font-size: 16px; color: #334155;">Hello,</p>
+      <p style="font-size: 15px; color: #334155;">Thank you for registering! Please use the following 6-digit verification code to complete your registration:</p>
+      <div style="text-align: center; margin: 24px 0;">
+        <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #2563eb; background-color: #eff6ff; padding: 12px 24px; border-radius: 8px; display: inline-block; border: 1px dashed #2563eb;">${code}</span>
+      </div>
+      <p style="font-size: 13px; color: #64748b; text-align: center;">This code will expire in 10 minutes. If you did not request this code, please ignore this email.</p>
+    </div>
+  `;
+
+  // 1. Try Resend HTTPS REST API if RESEND_API_KEY is configured
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY.trim()}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: process.env.RESEND_FROM || 'VocabQuiz <onboarding@resend.dev>',
+          to: [email],
+          subject: `🔐 Your VocabQuiz Verification Code: ${code}`,
+          html: htmlContent,
+        }),
+      });
+
+      if (res.ok) {
+        console.log(`✅ [RESEND EMAIL SENT] Verification code ${code} sent to ${email}`);
+        return true;
+      } else {
+        const errData = await res.json();
+        console.error(`❌ [RESEND API ERROR for ${email}]:`, errData);
+      }
+    } catch (err) {
+      console.error(`❌ [RESEND HTTP ERROR for ${email}]:`, err.message);
+    }
+  }
+
+  // 2. Fallback to Nodemailer SMTP (Port 465 SSL or Port 587)
   const mailOptions = {
     from: `"VocabQuizWithNil" <${process.env.SMTP_USER || 'noreply@vocabquiz.com'}>`,
     to: email,
     subject: `🔐 Your VocabQuiz Verification Code: ${code}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px;">
-        <h2 style="color: #2563eb; text-align: center; margin-bottom: 20px;">VocabQuizWithNil</h2>
-        <p style="font-size: 16px; color: #334155;">Hello,</p>
-        <p style="font-size: 15px; color: #334155;">Thank you for registering! Please use the following 6-digit verification code to complete your registration:</p>
-        <div style="text-align: center; margin: 24px 0;">
-          <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #2563eb; background-color: #eff6ff; padding: 12px 24px; border-radius: 8px; display: inline-block; border: 1px dashed #2563eb;">${code}</span>
-        </div>
-        <p style="font-size: 13px; color: #64748b; text-align: center;">This code will expire in 10 minutes. If you did not request this code, please ignore this email.</p>
-      </div>
-    `,
+    html: htmlContent,
   };
 
   const transporter = getMailTransporter();
@@ -404,7 +439,7 @@ async function sendVerificationEmail(email, code) {
     try {
       const sendPromise = transporter.sendMail(mailOptions);
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('SMTP Connection timeout (2.5s limit reached)')), 2500)
+        setTimeout(() => reject(new Error('SMTP Connection timeout (3s limit reached)')), 3000)
       );
 
       await Promise.race([sendPromise, timeoutPromise]);
