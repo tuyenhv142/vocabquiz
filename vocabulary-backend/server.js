@@ -205,6 +205,79 @@ app.put('/api/sets/:id/practice', async (req, res) => {
 });
 
 // ----------------------------------------------------
+// 4c. POST /api/sets/:id/clone - Clone / Import a shared study set
+// ----------------------------------------------------
+app.post('/api/sets/:id/clone', async (req, res) => {
+  const { id: sourceSetId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: 'userId is required to clone a set.' });
+  }
+
+  const client = await db.pool.connect();
+
+  try {
+    await client.query('BEGIN');
+
+    // 1. Fetch original set
+    const setRes = await client.query('SELECT * FROM study_sets WHERE id = $1', [sourceSetId]);
+    if (setRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Source study set not found' });
+    }
+
+    const sourceSet = setRes.rows[0];
+
+    // 2. Fetch original cards
+    const cardsRes = await client.query('SELECT * FROM cards WHERE set_id = $1 ORDER BY position ASC', [sourceSetId]);
+    const sourceCards = cardsRes.rows;
+
+    // 3. Create new cloned set for target user
+    const newSetRes = await client.query(
+      `INSERT INTO study_sets (user_id, title, description, is_public)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [
+        userId,
+        `${sourceSet.title} (Shared)`,
+        sourceSet.description || '',
+        true,
+      ]
+    );
+
+    const newSet = newSetRes.rows[0];
+
+    // 4. Copy all cards
+    const insertedCards = [];
+    for (let i = 0; i < sourceCards.length; i++) {
+      const c = sourceCards[i];
+      const cardRes = await client.query(
+        `INSERT INTO cards (set_id, term, definition, example_sentence, part_of_speech, position)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING *`,
+        [newSet.id, c.term, c.definition, c.example_sentence, c.part_of_speech, i + 1]
+      );
+      insertedCards.push(cardRes.rows[0]);
+    }
+
+    await client.query('COMMIT');
+    console.log(`✅ [SET CLONED] Cloned set ${sourceSetId} -> ${newSet.id} for user ${userId}`);
+    res.status(201).json({
+      ...newSet,
+      card_count: insertedCards.length,
+      cards: insertedCards,
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Failed to clone study set:', err);
+    res.status(500).json({ error: 'Failed to clone study set' });
+  } finally {
+    client.release();
+  }
+});
+
+// ----------------------------------------------------
 // 5. POST /api/sets/:id/cards/batch - Bulk Import Words
 // ----------------------------------------------------
 app.post('/api/sets/:id/cards/batch', async (req, res) => {

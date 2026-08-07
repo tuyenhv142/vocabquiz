@@ -5,8 +5,9 @@ import FlashcardPage from './components/FlashcardPage';
 import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
+import ShareSetModal from './components/ShareSetModal';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2 } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -20,6 +21,8 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCefrOpen, setIsCefrOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareTargetSet, setShareTargetSet] = useState(null);
   const [isNewUserSignup, setIsNewUserSignup] = useState(false);
   const [loadingSets, setLoadingSets] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
@@ -194,6 +197,39 @@ export default function App() {
       await loadSetDetails(selectedSet.id);
     }
   };
+
+  const handleOpenShare = (set, e) => {
+    if (e) e.stopPropagation();
+    setShareTargetSet(set);
+    setIsShareOpen(true);
+  };
+
+  const handleImportSharedSet = async (sharedId) => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/sets/${sharedId}/clone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id }),
+      });
+      if (res.ok) {
+        const imported = await res.json();
+        await loadUserSets(user.id);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert(`🎉 Successfully imported shared set: "${imported.title}"!`);
+      }
+    } catch (err) {
+      console.error('Failed to import shared set:', err);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sharedId = params.get('shareSetId');
+    if (sharedId && user?.id) {
+      handleImportSharedSet(sharedId);
+    }
+  }, [user?.id]);
 
   return (
     <div style={pageStyle}>
@@ -491,25 +527,36 @@ export default function App() {
                       </div>
 
                       {/* Bottom Actions Row */}
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
                         <button
                           onClick={() => loadSetDetails(set.id)}
                           style={{
                             ...primaryBtnStyle,
                             flex: 1,
                             justifyContent: 'center',
-                            padding: '10px 14px',
+                            padding: '10px 12px',
                             fontSize: '0.85rem',
                           }}
                         >
                           <Play size={15} fill="currentColor" /> Practice Set
                         </button>
                         <button
+                          onClick={(e) => handleOpenShare(set, e)}
+                          style={{
+                            ...secondaryBtnStyle,
+                            padding: '10px 12px',
+                            borderRadius: '12px',
+                          }}
+                          title="Share this set with another account"
+                        >
+                          <Share2 size={16} color="#2563eb" />
+                        </button>
+                        <button
                           onClick={(e) => handleDeleteSet(set.id, set.title, e)}
                           style={{
                             ...dangerBtnStyle,
                             padding: '10px 12px',
-                            borderRadius: '14px',
+                            borderRadius: '12px',
                           }}
                           title="Delete this set"
                         >
@@ -540,6 +587,13 @@ export default function App() {
           onSetCreated={handleSetCreated}
         />
       )}
+
+      {/* Share Set Modal */}
+      <ShareSetModal
+        isOpen={isShareOpen}
+        setInfo={shareTargetSet}
+        onClose={() => setIsShareOpen(false)}
+      />
 
       {/* CEFR Level Picker Modal */}
       <CefrModal
