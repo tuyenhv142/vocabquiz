@@ -3,17 +3,18 @@ import { Mail, Lock, LogIn, UserPlus, AlertCircle, KeyRound, CheckCircle2, Loade
 import { API_BASE } from '../config';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  const [authView, setAuthView] = useState('login'); // 'login', 'signup', 'forgot'
   const [isAwaitingOtp, setIsAwaitingOtp] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1); // 1: request code, 2: verify code & set new password
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
-
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -107,9 +108,74 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     }
   };
 
+  const handleSendForgotOtp = async (e) => {
+    if (e) e.preventDefault();
+    if (!email.trim()) return;
+    setError('');
+    setInfoMessage('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to request reset code');
+      }
+
+      setForgotStep(2);
+      if (data.devCode) {
+        setOtpCode(data.devCode);
+        setInfoMessage(`🔑 Reset Code: ${data.devCode} (Auto-filled)`);
+      } else {
+        setInfoMessage(`A 6-digit password reset code has been sent to ${email}`);
+      }
+      setLoading(false);
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setInfoMessage('');
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: otpCode, newPassword }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Password reset failed');
+      }
+
+      setLoading(false);
+      setAuthView('login');
+      setForgotStep(1);
+      setOtpCode('');
+      setNewPassword('');
+      setPassword('');
+      setInfoMessage('🎉 Password reset successfully! Please log in with your new password.');
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
   const toggleMode = () => {
-    setIsLoginMode((prev) => !prev);
+    setAuthView((prev) => (prev === 'login' ? 'signup' : 'login'));
     setIsAwaitingOtp(false);
+    setForgotStep(1);
     setError('');
     setInfoMessage('');
     setOtpCode('');
@@ -117,6 +183,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   const resetForm = () => {
     setIsAwaitingOtp(false);
+    setForgotStep(1);
     setError('');
     setInfoMessage('');
     setOtpCode('');
@@ -129,11 +196,17 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '20px' }}>
           <h2 style={{ fontSize: '22px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#0f172a' }}>
-            {isLoginMode ? 'Welcome Back' : isAwaitingOtp ? 'Enter Verification Code' : 'Create an Account'}
+            {authView === 'login'
+              ? 'Welcome Back'
+              : authView === 'forgot'
+              ? forgotStep === 1 ? 'Forgot Password?' : 'Reset Your Password'
+              : isAwaitingOtp ? 'Enter Verification Code' : 'Create an Account'}
           </h2>
           <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
-            {isLoginMode
+            {authView === 'login'
               ? 'Sign in to access your study sets & progress'
+              : authView === 'forgot'
+              ? forgotStep === 1 ? 'Enter your registered email to receive a 6-digit reset code' : `Enter code sent to ${email} and your new password`
               : isAwaitingOtp
               ? `Check your inbox (${email}) for the code`
               : 'Enter email to receive your 6-digit activation code'}
@@ -163,7 +236,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           }
         `}</style>
 
-        {isLoginMode ? (
+        {authView === 'login' ? (
           /* LOGIN FORM */
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: '16px' }}>
@@ -183,7 +256,21 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={labelStyle}>Password</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ ...labelStyle, marginBottom: 0 }}>Password</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthView('forgot');
+                    setForgotStep(1);
+                    setError('');
+                    setInfoMessage('');
+                  }}
+                  style={{ ...linkBtnStyle, fontSize: '0.8rem' }}
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
                 <Lock size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
                 <input
@@ -220,6 +307,108 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               )}
             </button>
           </form>
+        ) : authView === 'forgot' ? (
+          forgotStep === 1 ? (
+            /* FORGOT PASSWORD STEP 1: Enter Email */
+            <form onSubmit={handleSendForgotOtp}>
+              <div style={{ marginBottom: '24px' }}>
+                <label style={labelStyle}>Your Registered Email</label>
+                <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
+                  <Mail size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
+                  <input
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={inputStyle}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || !email.trim()}
+                style={{
+                  ...submitBtnStyle,
+                  backgroundColor: '#dc2626',
+                  opacity: (loading || !email.trim()) ? 0.75 : 1,
+                  cursor: (loading || !email.trim()) ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} style={{ marginRight: '8px', animation: 'authSpin 1s linear infinite' }} />
+                    Sending Code...
+                  </>
+                ) : (
+                  <>
+                    <Mail size={18} style={{ marginRight: '8px' }} /> Send Reset Code
+                  </>
+                )}
+              </button>
+            </form>
+          ) : (
+            /* FORGOT PASSWORD STEP 2: Enter Code & New Password */
+            <form onSubmit={handleResetPassword}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={labelStyle}>6-Digit Reset Code</label>
+                <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
+                  <KeyRound size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    placeholder="123456"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                    style={{ ...inputStyle, fontSize: '18px', letterSpacing: '4px', fontWeight: 'bold' }}
+                    disabled={loading}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={labelStyle}>New Password</label>
+                <div style={{ ...inputWrapperStyle, opacity: loading ? 0.7 : 1 }}>
+                  <Lock size={18} color="#94a3b8" style={{ marginLeft: '12px' }} />
+                  <input
+                    type="password"
+                    placeholder="••••••••"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    style={inputStyle}
+                    disabled={loading}
+                    required
+                    minLength={6}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || otpCode.length < 6 || newPassword.length < 6}
+                style={{
+                  ...submitBtnStyle,
+                  backgroundColor: '#dc2626',
+                  opacity: (loading || otpCode.length < 6 || newPassword.length < 6) ? 0.75 : 1,
+                  cursor: (loading || otpCode.length < 6 || newPassword.length < 6) ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={18} style={{ marginRight: '8px', animation: 'authSpin 1s linear infinite' }} />
+                    Resetting Password...
+                  </>
+                ) : (
+                  <>
+                    <KeyRound size={18} style={{ marginRight: '8px' }} /> Set New Password
+                  </>
+                )}
+              </button>
+            </form>
+          )
         ) : !isAwaitingOtp ? (
           /* SIGNUP STEP 1: Email & Password */
           <form onSubmit={handleSendOtp}>
@@ -336,10 +525,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         {/* Mode Toggle Footer */}
         <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#64748b' }}>
-          {isLoginMode ? "Don't have an account? " : 'Already have an account? '}
-          <button type="button" onClick={toggleMode} style={toggleBtnStyle} disabled={loading}>
-            {isLoginMode ? 'Sign Up' : 'Log In'}
-          </button>
+          {authView === 'forgot' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setAuthView('login');
+                setForgotStep(1);
+                setError('');
+                setInfoMessage('');
+              }}
+              style={toggleBtnStyle}
+              disabled={loading}
+            >
+              ← Back to Log In
+            </button>
+          ) : (
+            <>
+              {authView === 'login' ? "Don't have an account? " : 'Already have an account? '}
+              <button type="button" onClick={toggleMode} style={toggleBtnStyle} disabled={loading}>
+                {authView === 'login' ? 'Sign Up' : 'Log In'}
+              </button>
+            </>
+          )}
         </div>
 
       </div>

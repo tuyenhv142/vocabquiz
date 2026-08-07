@@ -745,6 +745,155 @@ app.post('/api/auth/verify-otp', async (req, res) => {
   }
 });
 
+// Store for Forgot Password OTP codes
+const forgotPasswordOtpStore = new Map();
+
+// Helper to send password reset email via Brevo
+async function sendPasswordResetEmail(email, code) {
+  const htmlContent = `
+    <div style="font-family: 'Segoe UI', Helvetica, Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 16px; background-color: #ffffff;">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <span style="background-color: #fef2f2; color: #dc2626; font-size: 11px; font-weight: 800; padding: 4px 12px; border-radius: 12px; letter-spacing: 0.1em; text-transform: uppercase;">
+          Password Reset Request
+        </span>
+        <h2 style="color: #0f172a; font-size: 22px; font-weight: 800; margin: 12px 0 6px;">VocabQuizWithNil</h2>
+      </div>
+      <p style="font-size: 15px; color: #334155; margin-bottom: 12px;">Hello,</p>
+      <p style="font-size: 14px; color: #475569; margin-bottom: 20px;">
+        We received a request to reset the password for your VocabQuiz account (${email}). Use the 6-digit verification code below to set a new password:
+      </p>
+      <div style="text-align: center; margin: 24px 0;">
+        <span style="font-size: 32px; font-weight: 800; letter-spacing: 6px; color: #dc2626; background-color: #fef2f2; padding: 12px 24px; border-radius: 12px; display: inline-block; border: 1px dashed #dc2626;">${code}</span>
+      </div>
+      <p style="font-size: 13px; color: #64748b; text-align: center; margin: 0;">
+        This code expires in 10 minutes. If you did not request a password reset, please ignore this email.
+      </p>
+    </div>
+  `;
+
+  const brevoApiKey = (process.env.BREVO_API_KEY || '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').trim();
+
+  if (brevoApiKey && brevoApiKey.startsWith('xkeysib-')) {
+    try {
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': brevoApiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          sender: {
+            name: process.env.EMAIL_SENDER_NAME || 'VocabQuizWithNil',
+            email: process.env.SMTP_USER || 'tuyenhv.142@gmail.com',
+          },
+          to: [{ email }],
+          subject: `🔑 Your Reset Password Code: ${code}`,
+          htmlContent: htmlContent,
+        }),
+      });
+
+      if (res.ok) {
+        console.log(`✅ [BREVO RESET EMAIL SENT] Reset code ${code} sent to ${email}`);
+        return true;
+      }
+    } catch (err) {
+      console.error(`❌ [BREVO HTTP ERROR for reset email ${email}]:`, err.message);
+    }
+  }
+
+  console.log(`🔑 [PASSWORD RESET CODE FOR ${email}]: ${code}`);
+  return false;
+}
+
+// ----------------------------------------------------
+// POST /api/auth/forgot-password - Send OTP for resetting password
+// ----------------------------------------------------
+app.post('/api/auth/forgot-password', async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: 'Email address is required.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  try {
+    const userCheck = await db.query('SELECT * FROM users WHERE LOWER(email) = $1', [cleanEmail]);
+    if (userCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'No account registered with this email address.' });
+    }
+
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    forgotPasswordOtpStore.set(cleanEmail, {
+      code,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    let emailSent = false;
+    try {
+      emailSent = await Promise.race([
+        sendPasswordResetEmail(cleanEmail, code),
+        new Promise((resolve) => setTimeout(() => resolve(false), 1000)),
+      ]);
+    } catch (e) {
+      emailSent = false;
+    }
+
+    res.json({
+      message: 'Password reset code sent to your email.',
+      devCode: emailSent ? undefined : code,
+    });
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ error: 'Failed to process password reset request.' });
+  }
+});
+
+// ----------------------------------------------------
+// POST /api/auth/reset-password - Verify code and set new password
+// ----------------------------------------------------
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ error: 'Email, verification code, and new password are required.' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const record = forgotPasswordOtpStore.get(cleanEmail);
+
+  if (!record) {
+    return res.status(400).json({ error: 'No reset request found. Please request a new reset code.' });
+  }
+
+  if (Date.now() > record.expiresAt) {
+    forgotPasswordOtpStore.delete(cleanEmail);
+    return res.status(400).json({ error: 'Verification code has expired. Please request a new code.' });
+  }
+
+  if (record.code !== code.trim()) {
+    return res.status(400).json({ error: 'Incorrect verification code. Please try again.' });
+  }
+
+  try {
+    const saltRounds = 10;
+    const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+    await db.query('UPDATE users SET password_hash = $1 WHERE LOWER(email) = $2', [passwordHash, cleanEmail]);
+    forgotPasswordOtpStore.delete(cleanEmail);
+
+    console.log(`🔐 [PASSWORD RESET SUCCESS] Updated password for ${cleanEmail}`);
+    res.json({ success: true, message: 'Password updated successfully! You can now log in.' });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Failed to update password.' });
+  }
+});
+
 // ----------------------------------------------------
 // SIGNUP ENDPOINT (Legacy / direct)
 // ----------------------------------------------------
