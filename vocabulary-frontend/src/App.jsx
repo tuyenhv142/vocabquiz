@@ -6,7 +6,7 @@ import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -22,6 +22,8 @@ export default function App() {
   const [isCefrOpen, setIsCefrOpen] = useState(false);
   const [isNewUserSignup, setIsNewUserSignup] = useState(false);
   const [loadingSets, setLoadingSets] = useState(false);
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const loadUserSets = async (userId) => {
     if (!userId) return;
@@ -308,6 +310,47 @@ export default function App() {
               </div>
             </div>
 
+            {sets.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
+                {/* Search Box */}
+                <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '8px 12px', backgroundColor: '#ffffff', flex: 1, minWidth: '200px', maxWidth: '360px' }}>
+                  <Search size={16} color="#94a3b8" style={{ marginRight: '8px' }} />
+                  <input
+                    type="text"
+                    placeholder="Search sets..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.85rem', color: '#0f172a', backgroundColor: 'transparent' }}
+                  />
+                </div>
+
+                {/* Sort Dropdown */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ArrowUpDown size={15} color="#64748b" />
+                  <select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '12px',
+                      border: '1px solid #cbd5e1',
+                      backgroundColor: '#ffffff',
+                      color: '#334155',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      outline: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <option value="newest">Sort by: Newest First</option>
+                    <option value="oldest">Sort by: Oldest First</option>
+                    <option value="last_practiced">Sort by: Recently Practiced</option>
+                    <option value="mastery">Sort by: Highest Mastery</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             {loadingSets ? (
               <div style={cardContainerStyle}>
                 <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Loading your sets...</div>
@@ -321,7 +364,24 @@ export default function App() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                {sets.map((set) => {
+                {sets
+                  .filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                  .sort((a, b) => {
+                    if (sortOrder === 'newest') {
+                      return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                    }
+                    if (sortOrder === 'oldest') {
+                      return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                    }
+                    if (sortOrder === 'last_practiced') {
+                      return new Date(b.last_practiced || 0) - new Date(a.last_practiced || 0);
+                    }
+                    if (sortOrder === 'mastery') {
+                      return (b.practice_percentage || 0) - (a.practice_percentage || 0);
+                    }
+                    return 0;
+                  })
+                  .map((set) => {
                   const pct = set.practice_percentage;
                   const hasPracticed = pct != null;
                   let pctColor = '#64748b';
