@@ -6,6 +6,7 @@ import SetReviewPage from './components/SetReviewPage';
 import PracticePage from './components/PracticePage';
 import CefrModal from './components/CefrModal';
 import ShareSetModal from './components/ShareSetModal';
+import ImportSharedSetModal from './components/ImportSharedSetModal';
 import logoImg from './assets/logo.jpg';
 import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2 } from 'lucide-react';
 
@@ -23,6 +24,8 @@ export default function App() {
   const [isCefrOpen, setIsCefrOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [shareTargetSet, setShareTargetSet] = useState(null);
+  const [importSetId, setImportSetId] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isNewUserSignup, setIsNewUserSignup] = useState(false);
   const [loadingSets, setLoadingSets] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
@@ -109,6 +112,14 @@ export default function App() {
   const handleAuthSuccess = async (loggedUser, isSignup = false) => {
     setUser(loggedUser);
     await loadUserSets(loggedUser.id);
+
+    const pendingShareId = localStorage.getItem('pendingShareSetId');
+    if (pendingShareId) {
+      setImportSetId(pendingShareId);
+      setIsImportModalOpen(true);
+      return;
+    }
+
     if (isSignup) {
       setIsCefrOpen(true);
       setIsNewUserSignup(true);
@@ -204,32 +215,32 @@ export default function App() {
     setIsShareOpen(true);
   };
 
-  const handleImportSharedSet = async (sharedId) => {
-    if (!user?.id) return;
-    try {
-      const res = await fetch(`${API_BASE}/api/sets/${sharedId}/clone`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id }),
-      });
-      if (res.ok) {
-        const imported = await res.json();
-        await loadUserSets(user.id);
-        window.history.replaceState({}, document.title, window.location.pathname);
-        alert(`🎉 Successfully imported shared set: "${imported.title}"!`);
+  const handleImportSuccess = async (importedSet) => {
+    setIsImportModalOpen(false);
+    localStorage.removeItem('pendingShareSetId');
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    if (user?.id) {
+      await loadUserSets(user.id);
+      if (importedSet?.id) {
+        await loadSetDetails(importedSet.id);
       }
-    } catch (err) {
-      console.error('Failed to import shared set:', err);
     }
   };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sharedId = params.get('shareSetId');
-    if (sharedId && user?.id) {
-      handleImportSharedSet(sharedId);
+    let sharedId = params.get('shareSetId');
+    if (!sharedId) {
+      sharedId = localStorage.getItem('pendingShareSetId');
     }
-  }, [user?.id]);
+
+    if (sharedId) {
+      localStorage.setItem('pendingShareSetId', sharedId);
+      setImportSetId(sharedId);
+      setIsImportModalOpen(true);
+    }
+  }, []);
 
   return (
     <div style={pageStyle}>
@@ -593,6 +604,23 @@ export default function App() {
         isOpen={isShareOpen}
         setInfo={shareTargetSet}
         onClose={() => setIsShareOpen(false)}
+      />
+
+      {/* Import Shared Set Modal */}
+      <ImportSharedSetModal
+        isOpen={isImportModalOpen}
+        setId={importSetId}
+        user={user}
+        onClose={() => {
+          setIsImportModalOpen(false);
+          localStorage.removeItem('pendingShareSetId');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }}
+        onImportSuccess={handleImportSuccess}
+        onOpenAuth={() => {
+          setIsImportModalOpen(false);
+          setIsAuthOpen(true);
+        }}
       />
 
       {/* CEFR Level Picker Modal */}
