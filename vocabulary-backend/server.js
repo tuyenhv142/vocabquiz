@@ -398,10 +398,10 @@ async function sendVerificationEmail(email, code) {
     </div>
   `;
 
-  const brevoApiKey = (process.env.BREVO_API_KEY || 'xsmtpsib-2f5a1a019f0803d25d322e6083e310f6e0ed6c178b4801e712073729aac31720-g1ptXH89jboMGeYG').trim();
+  const brevoApiKey = (process.env.BREVO_API_KEY || '').trim();
 
-  // 1. Send via Brevo HTTPS REST API
-  if (brevoApiKey) {
+  // 1. Send via Brevo HTTPS REST API if a valid xkeysib API key is configured
+  if (brevoApiKey && brevoApiKey.startsWith('xkeysib-')) {
     try {
       const res = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
