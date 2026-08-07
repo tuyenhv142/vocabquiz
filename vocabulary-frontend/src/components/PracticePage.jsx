@@ -276,6 +276,18 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     setShowHint(false);
   }, [currentIndex, isFinished, feedback, cards.length]);
 
+  // Auto-pronounce English question term out loud when English -> Vie question appears
+  useEffect(() => {
+    if (isFinished || feedback || !sessionQueue.length) return;
+    const activeCard = sessionQueue[currentIndex];
+    if (activeCard && activeCard.isEngToVie && activeCard.term) {
+      const timer = setTimeout(() => {
+        playPronunciation(activeCard.term);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [currentIndex, sessionQueue, feedback, isFinished]);
+
   useEffect(() => {
     setSessionQueue(buildSessionQueue(cards, questionDirection === 'termToDef'));
     setCurrentIndex(0);
