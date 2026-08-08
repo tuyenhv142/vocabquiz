@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { API_BASE } from '../config';
+import { recordLearningActivity, getUserRank } from '../utils/streakEngine';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -232,6 +233,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
   const [maxStreak, setMaxStreak] = useState(0);
   const [showHint, setShowHint] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [completedStreakData, setCompletedStreakData] = useState(null);
 
   // Time & Analytics State
   const [questionStartTime, setQuestionStartTime] = useState(() => Date.now());
@@ -381,6 +383,12 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     setIsFinished(true);
     setFeedback(null);
     setShowCorrection(false);
+
+    const isDailyDiscovery = setInfo?.isDailyDiscovery || setInfo?.id === 'daily-discovery-set';
+    const savedUser = localStorage.getItem('user');
+    const userId = savedUser ? JSON.parse(savedUser).id : 'guest';
+    const streakResult = recordLearningActivity(userId, 50, isDailyDiscovery);
+    setCompletedStreakData(streakResult);
 
     const totalUnique = cards.length > 0 ? cards.length : (sessionQueue.length || 1);
     const wrongUniqueCount = firstAttemptWrongSetRef.current.size;
@@ -640,6 +648,36 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
             <Trophy size={28} color="#f59e0b" />
             <h2 style={{ margin: 0 }}>Practice Results</h2>
           </div>
+
+          {completedStreakData && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'center',
+              gap: '12px',
+              marginTop: '10px',
+              flexWrap: 'wrap',
+            }}>
+              <span style={{
+                padding: '6px 14px', borderRadius: '20px', fontSize: '0.825rem', fontWeight: 800,
+                backgroundColor: '#fff7ed', color: '#ea580c', border: '1px solid #ffedd5'
+              }}>
+                🔥 {completedStreakData.currentStreak} Day Streak (+1 Day!)
+              </span>
+              <span style={{
+                padding: '6px 14px', borderRadius: '20px', fontSize: '0.825rem', fontWeight: 800,
+                backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0'
+              }}>
+                ⭐ +50 XP Earned
+              </span>
+              <span style={{
+                padding: '6px 14px', borderRadius: '20px', fontSize: '0.825rem', fontWeight: 800,
+                backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe'
+              }}>
+                {getUserRank(completedStreakData.currentStreak, completedStreakData.totalXP).badge} {getUserRank(completedStreakData.currentStreak, completedStreakData.totalXP).title}
+              </span>
+            </div>
+          )}
 
           {/* Percentage Circle & Stats */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', alignItems: 'center', margin: '16px 0', flexWrap: 'wrap' }}>

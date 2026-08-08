@@ -5,16 +5,18 @@ import CreateSetModal from './components/modals/CreateSetModal';
 import CefrModal from './components/modals/CefrModal';
 import ShareSetModal from './components/modals/ShareSetModal';
 import ImportSharedSetModal from './components/modals/ImportSharedSetModal';
+import LeaderboardModal from './components/modals/LeaderboardModal';
 import LoadingOverlay from './components/common/LoadingOverlay';
 import { calculateMemoryRetention } from './utils/memoryDecay';
 import { getWordOfTheDay, buildDailyDiscoverySet } from './utils/dailyDiscovery';
+import { getUserStreakData, isDailyChallengeCompletedToday, getUserRank } from './utils/streakEngine';
 
 import FlashcardPage from './pages/FlashcardPage';
 import SetEditPage from './pages/SetEditPage';
 import PracticePage from './pages/PracticePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2, ShieldAlert, Volume2 } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2, ShieldAlert, Volume2, Flame, Award, CheckCircle2 } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -111,6 +113,7 @@ export default function App() {
   const [shareTargetSet, setShareTargetSet] = useState(null);
   const [importSetId, setImportSetId] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isNewUserSignup, setIsNewUserSignup] = useState(false);
   const [loadingSets, setLoadingSets] = useState(false);
   const [sortOrder, setSortOrder] = useState('newest');
@@ -383,6 +386,26 @@ export default function App() {
         <div>
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              {(() => {
+                const sData = getUserStreakData(user?.id || 'guest');
+                return (
+                  <button
+                    onClick={() => setIsLeaderboardOpen(true)}
+                    style={{
+                      ...secondaryBtnStyle,
+                      borderColor: sData.currentStreak > 0 ? '#fed7aa' : '#cbd5e1',
+                      backgroundColor: sData.currentStreak > 0 ? '#fff7ed' : '#ffffff',
+                      color: sData.currentStreak > 0 ? '#ea580c' : '#334155',
+                      fontWeight: 800,
+                    }}
+                    title="View Learning Streak & Leaderboard Rankings"
+                  >
+                    <Flame size={16} color={sData.currentStreak > 0 ? '#ea580c' : '#94a3b8'} />
+                    <span>{sData.currentStreak}d Streak ({sData.totalXP} XP)</span>
+                  </button>
+                );
+              })()}
+
               <span style={userBadgeStyle}>
                 <UserCheck size={14} color="#2563eb" /> {user.email}
               </span>
@@ -473,14 +496,16 @@ export default function App() {
                   {/* Daily Word of the Day & Quick Challenge Banner */}
                   {(() => {
                     const wod = getWordOfTheDay();
+                    const isDoneToday = isDailyChallengeCompletedToday(user?.id || 'guest');
+
                     return (
                       <div style={{
                         marginBottom: '24px',
                         padding: '24px',
                         borderRadius: '24px',
                         backgroundColor: '#ffffff',
-                        border: '1px solid #bfdbfe',
-                        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
+                        border: isDoneToday ? '1px solid #bbf7d0' : '1px solid #bfdbfe',
+                        background: isDoneToday ? 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)' : 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
                         boxShadow: '0 10px 30px -5px rgba(37, 99, 235, 0.08)',
                         display: 'flex',
                         flexDirection: 'column',
@@ -490,14 +515,21 @@ export default function App() {
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{
                               width: '40px', height: '40px', borderRadius: '12px',
-                              backgroundColor: '#2563eb', color: '#ffffff',
+                              backgroundColor: isDoneToday ? '#16a34a' : '#2563eb', color: '#ffffff',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                             }}>
-                              <Sparkles size={22} />
+                              {isDoneToday ? <CheckCircle2 size={22} /> : <Sparkles size={22} />}
                             </div>
                             <div>
-                              <div style={{ fontSize: '0.725rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                Daily Discovery • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontSize: '0.725rem', fontWeight: 800, color: isDoneToday ? '#16a34a' : '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                  Daily Discovery • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                                {isDoneToday && (
+                                  <span style={{ fontSize: '0.725rem', fontWeight: 800, padding: '2px 8px', borderRadius: '10px', backgroundColor: '#dcfce7', color: '#15803d' }}>
+                                    ✅ Done Today (+50 XP)
+                                  </span>
+                                )}
                               </div>
                               <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
                                 Word of the Day (Từ Vựng Mỗi Ngày)
@@ -994,6 +1026,13 @@ export default function App() {
         setInfo={shareTargetSet}
         user={user}
         onClose={() => setIsShareOpen(false)}
+      />
+
+      {/* Leaderboard & Streak Modal */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        userId={user?.id}
       />
 
       {/* Import Shared Set Modal */}
