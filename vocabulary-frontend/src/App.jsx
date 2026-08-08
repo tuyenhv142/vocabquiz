@@ -6,6 +6,7 @@ import CefrModal from './components/modals/CefrModal';
 import ShareSetModal from './components/modals/ShareSetModal';
 import ImportSharedSetModal from './components/modals/ImportSharedSetModal';
 import LoadingOverlay from './components/common/LoadingOverlay';
+import { calculateMemoryRetention } from './utils/memoryDecay';
 
 import FlashcardPage from './pages/FlashcardPage';
 import SetEditPage from './pages/SetEditPage';
@@ -451,46 +452,153 @@ export default function App() {
                     </div>
                   </div>
 
-                  {sets.length > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
-                      {/* Search Box */}
-                      <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '8px 12px', backgroundColor: '#ffffff', flex: 1, minWidth: '200px', maxWidth: '360px' }}>
-                        <Search size={16} color="#94a3b8" style={{ marginRight: '8px' }} />
-                        <input
-                          type="text"
-                          placeholder="Search sets..."
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.85rem', color: '#0f172a', backgroundColor: 'transparent' }}
-                        />
-                      </div>
+                  {sets.length > 0 && (() => {
+                    const setsWithMemory = sets.map((s) => ({
+                      ...s,
+                      memory: calculateMemoryRetention(s.practice_percentage, s.last_practiced),
+                    }));
+                    const urgentSets = setsWithMemory
+                      .filter((s) => s.memory.needsReviewToday)
+                      .sort((a, b) => a.memory.decayedPercentage - b.memory.decayedPercentage);
 
-                      {/* Sort Dropdown */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <ArrowUpDown size={15} color="#64748b" />
-                        <select
-                          value={sortOrder}
-                          onChange={(e) => setSortOrder(e.target.value)}
-                          style={{
-                            padding: '8px 12px',
-                            borderRadius: '12px',
-                            border: '1px solid #cbd5e1',
+                    return (
+                      <>
+                        {/* Daily Spaced Repetition Review Recommendation Banner */}
+                        {urgentSets.length > 0 && (
+                          <div style={{
+                            marginBottom: '24px',
+                            padding: '20px',
+                            borderRadius: '20px',
                             backgroundColor: '#ffffff',
-                            color: '#334155',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            outline: 'none',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <option value="newest">Sort by: Newest First</option>
-                          <option value="oldest">Sort by: Oldest First</option>
-                          <option value="last_practiced">Sort by: Recently Practiced</option>
-                          <option value="mastery">Sort by: Highest Mastery</option>
-                        </select>
-                      </div>
-                    </div>
-                  )}
+                            border: '1px solid #fed7aa',
+                            boxShadow: '0 10px 25px -5px rgba(234, 88, 12, 0.08)',
+                            background: 'linear-gradient(135deg, #fff7ed 0%, #ffffff 100%)',
+                          }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <div style={{
+                                  width: '36px', height: '36px', borderRadius: '12px',
+                                  backgroundColor: '#ffedd5', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  color: '#ea580c'
+                                }}>
+                                  <Sparkles size={20} />
+                                </div>
+                                <div>
+                                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                                    🧠 Recommended Daily Practice (Forgetting Curve)
+                                  </h3>
+                                  <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                    Scientific memory retention decays over time. Practice these <strong>{urgentSets.length} set{urgentSets.length > 1 ? 's' : ''}</strong> today to lock in 100% recall!
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: '12px' }}>
+                              {urgentSets.slice(0, 3).map((set) => (
+                                <div
+                                  key={`rec-${set.id}`}
+                                  onClick={() => navigate(`/set/${set.id}/practice`)}
+                                  style={{
+                                    backgroundColor: '#ffffff',
+                                    padding: '14px 16px',
+                                    borderRadius: '14px',
+                                    border: `1px solid ${set.memory.statusColor}40`,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justify: 'space-between',
+                                    gap: '10px',
+                                    transition: 'transform 0.15s ease',
+                                  }}
+                                >
+                                  <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', marginBottom: '6px' }}>
+                                      <span style={{
+                                        fontSize: '0.725rem', fontWeight: 800, padding: '3px 8px', borderRadius: '12px',
+                                        backgroundColor: set.memory.statusBg, color: set.memory.statusColor, border: `1px solid ${set.memory.statusColor}30`
+                                      }}>
+                                        {set.memory.statusLabel}
+                                      </span>
+                                      <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>
+                                        {set.card_count} words
+                                      </span>
+                                    </div>
+                                    <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {set.title}
+                                    </h4>
+                                    <p style={{ margin: '4px 0 0', fontSize: '0.775rem', color: '#64748b' }}>
+                                      {set.memory.recommendationText}
+                                    </p>
+                                  </div>
+
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/set/${set.id}/practice`);
+                                    }}
+                                    style={{
+                                      ...primaryBtnStyle,
+                                      height: '34px',
+                                      fontSize: '0.8rem',
+                                      width: '100%',
+                                      backgroundColor: set.memory.statusColor,
+                                      boxShadow: `0 4px 12px ${set.memory.statusColor}30`,
+                                    }}
+                                  >
+                                    <Play size={13} fill="currentColor" /> Practice Today ⚡
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Search & Filter Bar */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
+                          {/* Search Box */}
+                          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '8px 12px', backgroundColor: '#ffffff', flex: 1, minWidth: '200px', maxWidth: '360px' }}>
+                            <Search size={16} color="#94a3b8" style={{ marginRight: '8px' }} />
+                            <input
+                              type="text"
+                              placeholder="Search sets..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.85rem', color: '#0f172a', backgroundColor: 'transparent' }}
+                            />
+                          </div>
+
+                          {/* Sort Dropdown */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <ArrowUpDown size={15} color="#64748b" />
+                            <select
+                              value={sortOrder}
+                              onChange={(e) => setSortOrder(e.target.value)}
+                              style={{
+                                padding: '8px 12px',
+                                borderRadius: '12px',
+                                border: '1px solid #cbd5e1',
+                                backgroundColor: '#ffffff',
+                                color: '#334155',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                outline: 'none',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <option value="recommended">Sort by: Recommended for Today (Forgetting Curve)</option>
+                              <option value="decayed">Sort by: Memory Retention (Lowest First)</option>
+                              <option value="newest">Sort by: Newest First</option>
+                              <option value="oldest">Sort by: Oldest First</option>
+                              <option value="last_practiced">Sort by: Recently Practiced</option>
+                              <option value="mastery">Sort by: Highest Initial Mastery</option>
+                            </select>
+                          </div>
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {loadingSets ? (
                     <LoadingOverlay inline title="Loading Your Vocabulary Sets..." subtitle="Fetching saved sets from database" />
@@ -504,8 +612,15 @@ export default function App() {
                   ) : (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
                       {sets
+                        .map((s) => ({
+                          ...s,
+                          memory: calculateMemoryRetention(s.practice_percentage, s.last_practiced),
+                        }))
                         .filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
                         .sort((a, b) => {
+                          if (sortOrder === 'recommended' || sortOrder === 'decayed') {
+                            return a.memory.decayedPercentage - b.memory.decayedPercentage;
+                          }
                           if (sortOrder === 'newest') {
                             return new Date(b.created_at || 0) - new Date(a.created_at || 0);
                           }
@@ -518,19 +633,11 @@ export default function App() {
                           if (sortOrder === 'mastery') {
                             return (b.practice_percentage || 0) - (a.practice_percentage || 0);
                           }
-                          return 0;
+                          return a.memory.decayedPercentage - b.memory.decayedPercentage;
                         })
                         .map((set) => {
-                          const pct = set.practice_percentage;
-                          const hasPracticed = pct != null;
-                          let pctColor = '#64748b';
-                          let pctBg = '#f1f5f9';
-                          if (hasPracticed) {
-                            if (pct >= 90) { pctColor = '#16a34a'; pctBg = '#f0fdf4'; }
-                            else if (pct >= 70) { pctColor = '#ca8a04'; pctBg = '#fefce8'; }
-                            else if (pct >= 50) { pctColor = '#ea580c'; pctBg = '#fff7ed'; }
-                            else { pctColor = '#dc2626'; pctBg = '#fef2f2'; }
-                          }
+                          const { memory } = set;
+                          const hasPracticed = set.practice_percentage != null;
 
                           return (
                             <div
@@ -549,9 +656,9 @@ export default function App() {
                                   <span style={{
                                     display: 'inline-flex', alignItems: 'center', gap: '4px',
                                     padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
-                                    backgroundColor: pctBg, color: pctColor, border: `1px solid ${pctColor}30`,
+                                    backgroundColor: memory.statusBg, color: memory.statusColor, border: `1px solid ${memory.statusColor}30`,
                                   }}>
-                                    <Trophy size={12} /> {pct}% Mastered
+                                    <Trophy size={12} /> {memory.decayedPercentage}% Retained
                                   </span>
                                 ) : (
                                   <span style={{
@@ -595,19 +702,26 @@ export default function App() {
                                   </div>
 
                                   {hasPracticed && set.last_practiced && (
-                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.775rem', color: '#64748b' }} title="Last practiced date">
-                                      <Clock size={13} color="#64748b" />
-                                      <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.775rem', color: '#64748b' }}>
+                                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }} title="Last practiced date">
+                                        <Clock size={13} color="#64748b" />
+                                        <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
+                                      </div>
+                                      {memory.decayedPercentage < set.practice_percentage && (
+                                        <span style={{ color: memory.statusColor, fontWeight: 600, fontSize: '0.75rem' }}>
+                                          (Decayed from initial {set.practice_percentage}% score)
+                                        </span>
+                                      )}
                                     </div>
                                   )}
                                 </div>
 
-                                {/* Visual Progress Bar */}
+                                {/* Visual Retention Bar */}
                                 <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', marginTop: 'auto' }}>
                                   <div style={{
-                                    width: `${hasPracticed ? Math.min(100, Math.max(5, pct)) : 0}%`,
+                                    width: `${hasPracticed ? Math.min(100, Math.max(5, memory.decayedPercentage)) : 0}%`,
                                     height: '100%',
-                                    backgroundColor: hasPracticed ? pctColor : 'transparent',
+                                    backgroundColor: hasPracticed ? memory.statusColor : 'transparent',
                                     borderRadius: '10px',
                                     transition: 'width 0.4s ease'
                                   }} />
