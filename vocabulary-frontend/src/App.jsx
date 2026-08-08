@@ -7,13 +7,14 @@ import ShareSetModal from './components/modals/ShareSetModal';
 import ImportSharedSetModal from './components/modals/ImportSharedSetModal';
 import LoadingOverlay from './components/common/LoadingOverlay';
 import { calculateMemoryRetention } from './utils/memoryDecay';
+import { getWordOfTheDay, buildDailyDiscoverySet } from './utils/dailyDiscovery';
 
 import FlashcardPage from './pages/FlashcardPage';
 import SetEditPage from './pages/SetEditPage';
 import PracticePage from './pages/PracticePage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import logoImg from './assets/logo.jpg';
-import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2, ShieldAlert } from 'lucide-react';
+import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Trophy, Play, Calendar, Search, ArrowUpDown, Share2, ShieldAlert, Volume2 } from 'lucide-react';
 
 import { API_BASE } from './config';
 
@@ -36,7 +37,7 @@ function SetDetailLoader({
   const { setId } = useParams();
 
   useEffect(() => {
-    if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
+    if (setId && setId !== 'daily-discovery-set' && (!selectedSet || String(selectedSet.id) !== String(setId))) {
       loadSetDetails(setId);
     }
   }, [setId]);
@@ -233,6 +234,23 @@ export default function App() {
     setSelectedSet(null);
     setSelectedCards([]);
     navigate('/');
+  };
+
+  const handleStartDailyChallenge = () => {
+    const dailySet = buildDailyDiscoverySet(sets);
+    setSelectedSet(dailySet);
+    setSelectedCards(dailySet.cards);
+    navigate('/set/daily-discovery-set/practice');
+  };
+
+  const playPronunciation = (text) => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   const handleDeleteSet = async (setId, title, e) => {
@@ -450,7 +468,119 @@ export default function App() {
                         <Plus size={16} /> New Set
                       </button>
                     </div>
-                  </div>
+                  {/* Daily Word of the Day & Quick Challenge Banner */}
+                  {(() => {
+                    const wod = getWordOfTheDay();
+                    return (
+                      <div style={{
+                        marginBottom: '24px',
+                        padding: '24px',
+                        borderRadius: '24px',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #bfdbfe',
+                        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
+                        boxShadow: '0 10px 30px -5px rgba(37, 99, 235, 0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '16px',
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div style={{
+                              width: '40px', height: '40px', borderRadius: '12px',
+                              backgroundColor: '#2563eb', color: '#ffffff',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            }}>
+                              <Sparkles size={22} />
+                            </div>
+                            <div>
+                              <div style={{ fontSize: '0.725rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                Daily Discovery • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                              </div>
+                              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#0f172a' }}>
+                                Word of the Day (Từ Vựng Mỗi Ngày)
+                              </h3>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={handleStartDailyChallenge}
+                            style={{
+                              ...primaryBtnStyle,
+                              height: '42px',
+                              padding: '0 20px',
+                              fontSize: '0.875rem',
+                              borderRadius: '14px',
+                              backgroundColor: '#2563eb',
+                              boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
+                            }}
+                          >
+                            <Play size={16} fill="currentColor" /> Start Daily 10-Word Quiz 🚀
+                          </button>
+                        </div>
+
+                        <div style={{
+                          backgroundColor: '#ffffff',
+                          borderRadius: '18px',
+                          padding: '18px 22px',
+                          border: '1px solid #dbeafe',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justify: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '16px',
+                        }}>
+                          <div style={{ flex: 1, minWidth: '240px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
+                              <h2 style={{ margin: 0, fontSize: '1.45rem', fontWeight: 800, color: '#0f172a' }}>
+                                {wod.term}
+                              </h2>
+                              {wod.phonetic && (
+                                <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 600 }}>
+                                  {wod.phonetic}
+                                </span>
+                              )}
+                              <span style={{
+                                fontSize: '0.725rem', fontWeight: 800, padding: '3px 9px', borderRadius: '10px',
+                                backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe'
+                              }}>
+                                {wod.part_of_speech}
+                              </span>
+                              <span style={{
+                                fontSize: '0.725rem', fontWeight: 800, padding: '3px 9px', borderRadius: '10px',
+                                backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1'
+                              }}>
+                                {wod.level}
+                              </span>
+                            </div>
+
+                            <div style={{ fontSize: '1.05rem', fontWeight: 700, color: '#16a34a', marginBottom: '6px' }}>
+                              💡 {wod.definition}
+                            </div>
+
+                            {wod.example_sentence && (
+                              <div style={{ fontSize: '0.85rem', color: '#475569', fontStyle: 'italic' }}>
+                                "{wod.example_sentence}"
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => playPronunciation(wod.term)}
+                            style={{
+                              ...secondaryBtnStyle,
+                              height: '40px',
+                              padding: '0 14px',
+                              borderRadius: '12px',
+                            }}
+                            title="Listen to English pronunciation"
+                          >
+                            <Volume2 size={16} color="#2563eb" /> Listen
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                   {sets.length > 0 && (() => {
                     const setsWithMemory = sets.map((s) => ({
