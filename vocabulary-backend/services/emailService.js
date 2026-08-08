@@ -6,7 +6,7 @@ const SENDER_NAME = process.env.EMAIL_SENDER_NAME || 'VocabQuiz Master';
 
 async function callBrevoApi(payload) {
   if (!BREVO_API_KEY || !BREVO_API_KEY.startsWith('xkeysib-')) {
-    return false;
+    return { success: false, error: 'Brevo API key is not configured.' };
   }
 
   try {
@@ -20,17 +20,16 @@ async function callBrevoApi(payload) {
       body: JSON.stringify(payload),
     });
 
+    const data = await res.json();
     if (res.ok) {
-      const data = await res.json();
       return { success: true, messageId: data.messageId };
     } else {
-      const errData = await res.json();
-      console.error('❌ [BREVO API NOTICE]:', errData.message || errData);
-      return false;
+      console.error('❌ [BREVO API NOTICE]:', data.message || data);
+      return { success: false, error: data.message || 'Brevo API error' };
     }
   } catch (err) {
     console.error('❌ [BREVO HTTP ERROR]:', err.message);
-    return false;
+    return { success: false, error: err.message };
   }
 }
 
@@ -57,10 +56,10 @@ async function sendVerificationEmail(email, code) {
     htmlContent,
   });
 
-  if (!result) {
+  if (!result || !result.success) {
     console.log(`🔑 [VERIFICATION CODE GENERATED FOR ${email}]: ${code}`);
   }
-  return !!result;
+  return result && result.success;
 }
 
 /**
@@ -95,10 +94,10 @@ async function sendPasswordResetEmail(email, code) {
     htmlContent,
   });
 
-  if (!result) {
+  if (!result || !result.success) {
     console.log(`🔑 [PASSWORD RESET CODE FOR ${email}]: ${code}`);
   }
-  return !!result;
+  return result && result.success;
 }
 
 /**

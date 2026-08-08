@@ -247,20 +247,13 @@ async function shareEmail(req, res) {
   const { id: setId } = req.params;
   const { recipientEmail, senderEmail, shareUrl } = req.body;
 
-  if (!recipientEmail) {
-    return res.status(400).json({ error: 'recipientEmail is required.' });
+  if (!recipientEmail || !recipientEmail.includes('@')) {
+    return res.status(400).json({ error: 'Valid recipient email address is required.' });
   }
 
   const cleanRecipient = recipientEmail.trim().toLowerCase();
 
   try {
-    const userCheck = await db.query('SELECT id, email FROM users WHERE LOWER(email) = $1', [cleanRecipient]);
-    if (userCheck.rows.length === 0) {
-      return res.status(404).json({
-        error: `Account "${cleanRecipient}" is not registered on VocabQuiz yet. Please ask them to sign up first, or share via direct link!`
-      });
-    }
-
     const setRes = await db.query('SELECT * FROM study_sets WHERE id = $1', [setId]);
     if (setRes.rows.length === 0) {
       return res.status(404).json({ error: 'Study set not found' });
@@ -271,14 +264,16 @@ async function shareEmail(req, res) {
     const cardCount = cardsRes.rows[0]?.card_count || 0;
 
     const emailResult = await sendShareSetEmail(cleanRecipient, senderEmail, setInfo, cardCount, shareUrl);
-    if (!emailResult) {
-      return res.status(500).json({ error: 'Failed to send share invitation email via Brevo.' });
+    if (!emailResult || !emailResult.success) {
+      return res.status(400).json({
+        error: emailResult?.error || 'Failed to send share invitation email via Brevo.'
+      });
     }
 
     res.json({ success: true, messageId: emailResult.messageId });
   } catch (err) {
     console.error('Failed to send share email:', err);
-    res.status(500).json({ error: 'Failed to send share email' });
+    res.status(500).json({ error: err.message || 'Failed to send share email' });
   }
 }
 
