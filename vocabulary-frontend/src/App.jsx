@@ -236,8 +236,8 @@ export default function App() {
     navigate('/');
   };
 
-  const handleStartDailyChallenge = () => {
-    const dailySet = buildDailyDiscoverySet(sets);
+  const handleStartDailyChallenge = (mode = 'easy') => {
+    const dailySet = buildDailyDiscoverySet(sets, mode);
     setSelectedSet(dailySet);
     setSelectedCards(dailySet.cards);
     navigate('/set/daily-discovery-set/practice');
@@ -505,20 +505,37 @@ export default function App() {
                             </div>
                           </div>
 
-                          <button
-                            onClick={handleStartDailyChallenge}
-                            style={{
-                              ...primaryBtnStyle,
-                              height: '42px',
-                              padding: '0 20px',
-                              fontSize: '0.875rem',
-                              borderRadius: '14px',
-                              backgroundColor: '#2563eb',
-                              boxShadow: '0 4px 14px rgba(37,99,235,0.28)',
-                            }}
-                          >
-                            <Play size={16} fill="currentColor" /> Start Daily 10-Word Quiz 🚀
-                          </button>
+                          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => handleStartDailyChallenge('easy')}
+                              style={{
+                                ...primaryBtnStyle,
+                                height: '42px',
+                                padding: '0 18px',
+                                fontSize: '0.85rem',
+                                borderRadius: '14px',
+                                backgroundColor: '#16a34a',
+                                boxShadow: '0 4px 14px rgba(22,163,74,0.28)',
+                              }}
+                            >
+                              <Play size={15} fill="currentColor" /> 🌱 Quick 5-Word Beginner Quiz
+                            </button>
+                            <button
+                              onClick={() => handleStartDailyChallenge('challenge')}
+                              style={{
+                                ...secondaryBtnStyle,
+                                height: '42px',
+                                padding: '0 16px',
+                                fontSize: '0.85rem',
+                                borderRadius: '14px',
+                                border: '1px solid #93c5fd',
+                                color: '#1d4ed8',
+                                backgroundColor: '#eff6ff',
+                              }}
+                            >
+                              ⚡ 5-Word Challenge
+                            </button>
+                          </div>
                         </div>
 
                         <div style={{
