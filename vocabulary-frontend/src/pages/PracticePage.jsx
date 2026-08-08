@@ -666,9 +666,11 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
               </span>
               <span style={{
                 padding: '6px 14px', borderRadius: '20px', fontSize: '0.825rem', fontWeight: 800,
-                backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0'
+                backgroundColor: completedStreakData.alreadyRewardedToday ? '#f1f5f9' : '#f0fdf4',
+                color: completedStreakData.alreadyRewardedToday ? '#64748b' : '#16a34a',
+                border: completedStreakData.alreadyRewardedToday ? '1px solid #cbd5e1' : '1px solid #bbf7d0'
               }}>
-                ⭐ +50 XP Earned
+                {completedStreakData.alreadyRewardedToday ? 'ℹ️ Đã nhận +50 XP hôm nay' : '⭐ +50 XP Earned'}
               </span>
               <span style={{
                 padding: '6px 14px', borderRadius: '20px', fontSize: '0.825rem', fontWeight: 800,

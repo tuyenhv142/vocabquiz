@@ -39,6 +39,28 @@ export default function FlashcardPage({ setInfo, cards = [], onBack, onEdit, onP
 
       {/* Main Flashcard Card Container */}
       <div style={cardStyle}>
+        {(setInfo?.isDailyDiscovery || setInfo?.id === 'daily-discovery-set') && (
+          <div style={{
+            marginBottom: '16px',
+            padding: '14px 18px',
+            borderRadius: '14px',
+            backgroundColor: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            display: 'flex',
+            alignItems: 'center',
+            justify: 'space-between',
+            gap: '12px',
+            flexWrap: 'wrap',
+          }}>
+            <div style={{ fontSize: '0.875rem', fontWeight: 700, color: '#1e40af' }}>
+              💡 Learn these 5 words using flashcards first! When ready, click <strong>"Start Practice Quiz"</strong> to take the quiz and earn +50 XP!
+            </div>
+            <button onClick={onPractice} style={{ ...primaryBtnStyle, height: '36px', fontSize: '0.8rem', backgroundColor: '#16a34a' }}>
+              <Play size={14} fill="currentColor" /> Ready! Take Quiz Now 🚀
+            </button>
+          </div>
+        )}
+
         <div style={actionToolbarStyle}>
           <button onClick={onPractice} style={primaryBtnStyle}>
             <Play size={15} /> Start Practice Quiz

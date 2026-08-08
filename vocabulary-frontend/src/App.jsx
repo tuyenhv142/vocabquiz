@@ -239,6 +239,13 @@ export default function App() {
     navigate('/');
   };
 
+  const handleStartDailyFlashcards = (mode = 'easy') => {
+    const dailySet = buildDailyDiscoverySet(sets, mode);
+    setSelectedSet(dailySet);
+    setSelectedCards(dailySet.cards);
+    navigate('/set/daily-discovery-set');
+  };
+
   const handleStartDailyChallenge = (mode = 'easy') => {
     const dailySet = buildDailyDiscoverySet(sets, mode);
     setSelectedSet(dailySet);
@@ -388,6 +395,7 @@ export default function App() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               {(() => {
                 const sData = getUserStreakData(user?.id || 'guest');
+                const rank = getUserRank(sData.currentStreak, sData.totalXP);
                 return (
                   <button
                     onClick={() => setIsLeaderboardOpen(true)}
@@ -400,8 +408,10 @@ export default function App() {
                     }}
                     title="View Learning Streak & Leaderboard Rankings"
                   >
-                    <Flame size={16} color={sData.currentStreak > 0 ? '#ea580c' : '#94a3b8'} />
-                    <span>{sData.currentStreak}d Streak ({sData.totalXP} XP)</span>
+                    <span>{rank.shortTitle}</span>
+                    <span style={{ opacity: 0.35 }}>|</span>
+                    <Flame size={15} color={sData.currentStreak > 0 ? '#ea580c' : '#94a3b8'} />
+                    <span>{sData.currentStreak}d ({sData.totalXP} XP)</span>
                   </button>
                 );
               })()}
@@ -539,6 +549,22 @@ export default function App() {
 
                           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                             <button
+                              onClick={() => handleStartDailyFlashcards('easy')}
+                              style={{
+                                ...secondaryBtnStyle,
+                                height: '42px',
+                                padding: '0 16px',
+                                fontSize: '0.85rem',
+                                borderRadius: '14px',
+                                border: '1px solid #bfdbfe',
+                                color: '#2563eb',
+                                backgroundColor: '#eff6ff',
+                              }}
+                              title="Học thuộc 5 từ vựng bằng Flashcard trước khi kiểm tra"
+                            >
+                              <BookOpen size={16} /> 📖 Học Flashcards Trực Quan (5 từ)
+                            </button>
+                            <button
                               onClick={() => handleStartDailyChallenge('easy')}
                               style={{
                                 ...primaryBtnStyle,
@@ -549,8 +575,9 @@ export default function App() {
                                 backgroundColor: '#16a34a',
                                 boxShadow: '0 4px 14px rgba(22,163,74,0.28)',
                               }}
+                              title="Vào làm bài kiểm tra trắc nghiệm ngay"
                             >
-                              <Play size={15} fill="currentColor" /> 🌱 Quick 5-Word Beginner Quiz
+                              <Play size={15} fill="currentColor" /> 🌱 Kiểm Tra Ngay (5 từ)
                             </button>
                             <button
                               onClick={() => handleStartDailyChallenge('challenge')}
@@ -560,10 +587,11 @@ export default function App() {
                                 padding: '0 16px',
                                 fontSize: '0.85rem',
                                 borderRadius: '14px',
-                                border: '1px solid #93c5fd',
-                                color: '#1d4ed8',
-                                backgroundColor: '#eff6ff',
+                                border: '1px solid #fed7aa',
+                                color: '#ea580c',
+                                backgroundColor: '#fff7ed',
                               }}
+                              title="Thử thách 5 từ nâng cao"
                             >
                               ⚡ 5-Word Challenge
                             </button>
