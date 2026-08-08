@@ -159,12 +159,29 @@ async function updatePracticeResult(req, res) {
 
   try {
     const result = await db.query(
-      `UPDATE study_sets SET practice_percentage = $1, last_practiced = NOW() WHERE id = $2 RETURNING id, practice_percentage, last_practiced`,
+      `UPDATE study_sets SET practice_percentage = $1, last_practiced = NOW() WHERE id = $2 RETURNING id, user_id, practice_percentage, last_practiced`,
       [percentage, setId]
     );
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Study set not found' });
+    }
+
+    const setOwnerId = result.rows[0].user_id;
+    if (setOwnerId) {
+      try {
+        await db.query(
+          `UPDATE users 
+           SET xp_points = COALESCE(xp_points, 0) + 50,
+               current_streak = GREATEST(COALESCE(current_streak, 0), 1),
+               last_active_date = CURRENT_DATE,
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = $1`,
+          [setOwnerId]
+        );
+      } catch (e) {
+        console.error('Failed to update owner XP in DB:', e.message);
+      }
     }
 
     res.json(result.rows[0]);

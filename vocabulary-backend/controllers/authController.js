@@ -391,13 +391,34 @@ async function getLeaderboard(req, res) {
   const currentUserXP = req.query.userXP ? parseInt(req.query.userXP, 10) : null;
   const currentUserStreak = req.query.userStreak ? parseInt(req.query.userStreak, 10) : null;
 
+  // Proactively sync current user's local XP to DB if provided
+  if (currentUserId && currentUserXP != null && currentUserXP > 0) {
+    try {
+      await db.query(
+        `UPDATE users 
+         SET xp_points = GREATEST(COALESCE(xp_points, 0), $1),
+             current_streak = GREATEST(COALESCE(current_streak, 0), $2)
+         WHERE id = $3`,
+        [currentUserXP, currentUserStreak || 1, currentUserId]
+      );
+    } catch (e) {
+      console.error('Failed to auto-sync current user XP in leaderboard:', e.message);
+    }
+  }
+
   try {
     const result = await db.query(
       `SELECT 
          u.id, 
          u.email, 
-         COALESCE(u.xp_points, 0)::int AS db_xp,
-         COALESCE(u.current_streak, 0)::int AS db_streak,
+         GREATEST(
+           COALESCE(u.xp_points, 0), 
+           COALESCE(COUNT(s.last_practiced), 0) * 50
+         )::int AS db_xp,
+         GREATEST(
+           COALESCE(u.current_streak, 0), 
+           CASE WHEN COUNT(s.last_practiced) > 0 THEN 1 ELSE 0 END
+         )::int AS db_streak,
          COALESCE(COUNT(s.id), 0)::int AS set_count,
          COALESCE(MAX(s.practice_percentage), 0)::int AS top_score,
          COALESCE(SUM(CASE WHEN s.practice_percentage >= 80 THEN 1 ELSE 0 END), 0)::int AS mastered_sets
@@ -437,7 +458,7 @@ async function getLeaderboard(req, res) {
       };
     });
 
-    // Sort leaderboard by totalXP descending
+    // Sort leaderboard strictly by totalXP descending
     leaderboard.sort((a, b) => b.totalXP - a.totalXP || b.streakDays - a.streakDays || b.masteredSets - a.masteredSets);
     leaderboard.forEach((item, idx) => {
       item.rank = idx + 1;
