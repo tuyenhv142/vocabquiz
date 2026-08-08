@@ -468,6 +468,8 @@ export default function App() {
                         <Plus size={16} /> New Set
                       </button>
                     </div>
+                  </div>
+
                   {/* Daily Word of the Day & Quick Challenge Banner */}
                   {(() => {
                     const wod = getWordOfTheDay();
@@ -582,19 +584,31 @@ export default function App() {
                     );
                   })()}
 
-                  {sets.length > 0 && (() => {
-                    const setsWithMemory = sets.map((s) => ({
-                      ...s,
-                      memory: calculateMemoryRetention(s.practice_percentage, s.last_practiced),
-                    }));
-                    const urgentSets = setsWithMemory
-                      .filter((s) => s.memory.needsReviewToday)
-                      .sort((a, b) => a.memory.decayedPercentage - b.memory.decayedPercentage);
+                  {/* Sets Area */}
+                  {loadingSets ? (
+                    <LoadingOverlay inline title="Loading Your Vocabulary Sets..." subtitle="Fetching saved sets from database" />
+                  ) : sets.length === 0 ? (
+                    <div style={{ ...welcomeCardStyle, padding: '40px 20px' }}>
+                      <BookOpen size={32} color="#94a3b8" style={{ marginBottom: '10px' }} />
+                      <p style={{ color: '#475569', fontWeight: 600, margin: 0 }}>
+                        You don't have any sets yet. Click <strong>"+ New Set"</strong> or <strong>"Browse CEFR Sets"</strong> to get started!
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      {/* Daily Spaced Repetition Review Recommendation Banner */}
+                      {(() => {
+                        const setsWithMemory = sets.map((s) => ({
+                          ...s,
+                          memory: calculateMemoryRetention(s.practice_percentage, s.last_practiced),
+                        }));
+                        const urgentSets = setsWithMemory
+                          .filter((s) => s.memory.needsReviewToday)
+                          .sort((a, b) => a.memory.decayedPercentage - b.memory.decayedPercentage);
 
-                    return (
-                      <>
-                        {/* Daily Spaced Repetition Review Recommendation Banner */}
-                        {urgentSets.length > 0 && (
+                        if (urgentSets.length === 0) return null;
+
+                        return (
                           <div style={{
                             marginBottom: '24px',
                             padding: '20px',
@@ -683,224 +697,214 @@ export default function App() {
                               ))}
                             </div>
                           </div>
-                        )}
+                        );
+                      })()}
 
-                        {/* Search & Filter Bar */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
-                          {/* Search Box */}
-                          <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '8px 12px', backgroundColor: '#ffffff', flex: 1, minWidth: '200px', maxWidth: '360px' }}>
-                            <Search size={16} color="#94a3b8" style={{ marginRight: '8px' }} />
-                            <input
-                              type="text"
-                              placeholder="Search sets..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.85rem', color: '#0f172a', backgroundColor: 'transparent' }}
-                            />
-                          </div>
-
-                          {/* Sort Dropdown */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <ArrowUpDown size={15} color="#64748b" />
-                            <select
-                              value={sortOrder}
-                              onChange={(e) => setSortOrder(e.target.value)}
-                              style={{
-                                padding: '8px 12px',
-                                borderRadius: '12px',
-                                border: '1px solid #cbd5e1',
-                                backgroundColor: '#ffffff',
-                                color: '#334155',
-                                fontSize: '0.85rem',
-                                fontWeight: 700,
-                                outline: 'none',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <option value="recommended">Sort by: Recommended for Today (Forgetting Curve)</option>
-                              <option value="decayed">Sort by: Memory Retention (Lowest First)</option>
-                              <option value="newest">Sort by: Newest First</option>
-                              <option value="oldest">Sort by: Oldest First</option>
-                              <option value="last_practiced">Sort by: Recently Practiced</option>
-                              <option value="mastery">Sort by: Highest Initial Mastery</option>
-                            </select>
-                          </div>
+                      {/* Search & Filter Bar */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', gap: '12px', flexWrap: 'wrap' }}>
+                        {/* Search Box */}
+                        <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #cbd5e1', borderRadius: '12px', padding: '8px 12px', backgroundColor: '#ffffff', flex: 1, minWidth: '200px', maxWidth: '360px' }}>
+                          <Search size={16} color="#94a3b8" style={{ marginRight: '8px' }} />
+                          <input
+                            type="text"
+                            placeholder="Search sets..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            style={{ border: 'none', outline: 'none', width: '100%', fontSize: '0.85rem', color: '#0f172a', backgroundColor: 'transparent' }}
+                          />
                         </div>
-                      </>
-                    );
-                  })()}
 
-                  {loadingSets ? (
-                    <LoadingOverlay inline title="Loading Your Vocabulary Sets..." subtitle="Fetching saved sets from database" />
-                  ) : sets.length === 0 ? (
-                    <div style={{ ...welcomeCardStyle, padding: '40px 20px' }}>
-                      <BookOpen size={32} color="#94a3b8" style={{ marginBottom: '10px' }} />
-                      <p style={{ color: '#475569', fontWeight: 600, margin: 0 }}>
-                        You don't have any sets yet. Click <strong>"+ New Set"</strong> or <strong>"Browse CEFR Sets"</strong> to get started!
-                      </p>
-                    </div>
-                  ) : (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
-                      {sets
-                        .map((s) => ({
-                          ...s,
-                          memory: calculateMemoryRetention(s.practice_percentage, s.last_practiced),
-                        }))
-                        .filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                        .sort((a, b) => {
-                          if (sortOrder === 'recommended' || sortOrder === 'decayed') {
+                        {/* Sort Dropdown */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <ArrowUpDown size={15} color="#64748b" />
+                          <select
+                            value={sortOrder}
+                            onChange={(e) => setSortOrder(e.target.value)}
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: '12px',
+                              border: '1px solid #cbd5e1',
+                              backgroundColor: '#ffffff',
+                              color: '#334155',
+                              fontSize: '0.85rem',
+                              fontWeight: 700,
+                              outline: 'none',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <option value="recommended">Sort by: Recommended for Today (Forgetting Curve)</option>
+                            <option value="decayed">Sort by: Memory Retention (Lowest First)</option>
+                            <option value="newest">Sort by: Newest First</option>
+                            <option value="oldest">Sort by: Oldest First</option>
+                            <option value="last_practiced">Sort by: Recently Practiced</option>
+                            <option value="mastery">Sort by: Highest Initial Mastery</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Sets Grid */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
+                        {sets
+                          .map((s) => ({
+                            ...s,
+                            memory: calculateMemoryRetention(s.practice_percentage, s.last_practiced),
+                          }))
+                          .filter((s) => s.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .sort((a, b) => {
+                            if (sortOrder === 'recommended' || sortOrder === 'decayed') {
+                              return a.memory.decayedPercentage - b.memory.decayedPercentage;
+                            }
+                            if (sortOrder === 'newest') {
+                              return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                            }
+                            if (sortOrder === 'oldest') {
+                              return new Date(a.created_at || 0) - new Date(b.created_at || 0);
+                            }
+                            if (sortOrder === 'last_practiced') {
+                              return new Date(b.last_practiced || 0) - new Date(a.last_practiced || 0);
+                            }
+                            if (sortOrder === 'mastery') {
+                              return (b.practice_percentage || 0) - (a.practice_percentage || 0);
+                            }
                             return a.memory.decayedPercentage - b.memory.decayedPercentage;
-                          }
-                          if (sortOrder === 'newest') {
-                            return new Date(b.created_at || 0) - new Date(a.created_at || 0);
-                          }
-                          if (sortOrder === 'oldest') {
-                            return new Date(a.created_at || 0) - new Date(b.created_at || 0);
-                          }
-                          if (sortOrder === 'last_practiced') {
-                            return new Date(b.last_practiced || 0) - new Date(a.last_practiced || 0);
-                          }
-                          if (sortOrder === 'mastery') {
-                            return (b.practice_percentage || 0) - (a.practice_percentage || 0);
-                          }
-                          return a.memory.decayedPercentage - b.memory.decayedPercentage;
-                        })
-                        .map((set) => {
-                          const { memory } = set;
-                          const hasPracticed = set.practice_percentage != null;
+                          })
+                          .map((set) => {
+                            const { memory } = set;
+                            const hasPracticed = set.practice_percentage != null;
 
-                          return (
-                            <div
-                              key={set.id}
-                              onClick={() => navigate(`/set/${set.id}`)}
-                              style={{ ...setCardStyle, cursor: 'pointer' }}
-                            >
-                              {/* Top Header Row */}
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>
-                                  <Layers size={14} />
-                                  <span>Set</span>
-                                </div>
-
-                                {hasPracticed ? (
-                                  <span style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                    padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
-                                    backgroundColor: memory.statusBg, color: memory.statusColor, border: `1px solid ${memory.statusColor}30`,
-                                  }}>
-                                    <Trophy size={12} /> {memory.decayedPercentage}% Retained
-                                  </span>
-                                ) : (
-                                  <span style={{
-                                    padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
-                                    backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0',
-                                  }}>
-                                    New Set
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Content Section */}
-                              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '16px' }}>
-                                <h3 style={{
-                                  margin: '0 0 8px 0',
-                                  fontSize: '1.1rem',
-                                  fontWeight: 800,
-                                  color: '#0f172a',
-                                  lineHeight: 1.35,
-                                  minHeight: '2.7rem',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden'
-                                }}>
-                                  {set.title}
-                                </h3>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: '#64748b', marginBottom: '14px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
-                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                                      <BookOpen size={14} color="#3b82f6" />
-                                      <strong>{set.card_count}</strong> {set.card_count === 1 ? 'word' : 'words'}
-                                    </span>
-                                    {set.created_at && (
-                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#94a3b8' }} title="Created date">
-                                        <Calendar size={13} color="#94a3b8" />
-                                        Created {new Date(set.created_at).toLocaleDateString()}
-                                      </span>
-                                    )}
+                            return (
+                              <div
+                                key={set.id}
+                                onClick={() => navigate(`/set/${set.id}`)}
+                                style={{ ...setCardStyle, cursor: 'pointer' }}
+                              >
+                                {/* Top Header Row */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#eff6ff', color: '#2563eb', padding: '4px 10px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>
+                                    <Layers size={14} />
+                                    <span>Set</span>
                                   </div>
 
-                                  {hasPracticed && set.last_practiced && (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.775rem', color: '#64748b' }}>
-                                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }} title="Last practiced date">
-                                        <Clock size={13} color="#64748b" />
-                                        <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
-                                      </div>
-                                      {memory.decayedPercentage < set.practice_percentage && (
-                                        <span style={{ color: memory.statusColor, fontWeight: 600, fontSize: '0.75rem' }}>
-                                          (Decayed from initial {set.practice_percentage}% score)
-                                        </span>
-                                      )}
-                                    </div>
+                                  {hasPracticed ? (
+                                    <span style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                      padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 800,
+                                      backgroundColor: memory.statusBg, color: memory.statusColor, border: `1px solid ${memory.statusColor}30`,
+                                    }}>
+                                      <Trophy size={12} /> {memory.decayedPercentage}% Retained
+                                    </span>
+                                  ) : (
+                                    <span style={{
+                                      padding: '4px 10px', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700,
+                                      backgroundColor: '#f8fafc', color: '#94a3b8', border: '1px solid #e2e8f0',
+                                    }}>
+                                      New Set
+                                    </span>
                                   )}
                                 </div>
 
-                                {/* Visual Retention Bar */}
-                                <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', marginTop: 'auto' }}>
-                                  <div style={{
-                                    width: `${hasPracticed ? Math.min(100, Math.max(5, memory.decayedPercentage)) : 0}%`,
-                                    height: '100%',
-                                    backgroundColor: hasPracticed ? memory.statusColor : 'transparent',
-                                    borderRadius: '10px',
-                                    transition: 'width 0.4s ease'
-                                  }} />
+                                {/* Content Section */}
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginBottom: '16px' }}>
+                                  <h3 style={{
+                                    margin: '0 0 8px 0',
+                                    fontSize: '1.1rem',
+                                    fontWeight: 800,
+                                    color: '#0f172a',
+                                    lineHeight: 1.35,
+                                    minHeight: '2.7rem',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                  }}>
+                                    {set.title}
+                                  </h3>
+
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '0.8rem', color: '#64748b', marginBottom: '14px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                        <BookOpen size={14} color="#3b82f6" />
+                                        <strong>{set.card_count}</strong> {set.card_count === 1 ? 'word' : 'words'}
+                                      </span>
+                                      {set.created_at && (
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#94a3b8' }} title="Created date">
+                                          <Calendar size={13} color="#94a3b8" />
+                                          Created {new Date(set.created_at).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                    </div>
+
+                                    {hasPracticed && set.last_practiced && (
+                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '0.775rem', color: '#64748b' }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }} title="Last practiced date">
+                                          <Clock size={13} color="#64748b" />
+                                          <span>Last practiced: {new Date(set.last_practiced).toLocaleDateString()}</span>
+                                        </div>
+                                        {memory.decayedPercentage < set.practice_percentage && (
+                                          <span style={{ color: memory.statusColor, fontWeight: 600, fontSize: '0.75rem' }}>
+                                            (Decayed from initial {set.practice_percentage}% score)
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Visual Retention Bar */}
+                                  <div style={{ width: '100%', height: '6px', backgroundColor: '#e2e8f0', borderRadius: '10px', overflow: 'hidden', marginTop: 'auto' }}>
+                                    <div style={{
+                                      width: `${hasPracticed ? Math.min(100, Math.max(5, memory.decayedPercentage)) : 0}%`,
+                                      height: '100%',
+                                      backgroundColor: hasPracticed ? memory.statusColor : 'transparent',
+                                      borderRadius: '10px',
+                                      transition: 'width 0.4s ease'
+                                    }} />
+                                  </div>
+                                </div>
+
+                                {/* Bottom Actions Row */}
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/set/${set.id}/practice`);
+                                    }}
+                                    style={{
+                                      ...primaryBtnStyle,
+                                      flex: 1,
+                                      justifyContent: 'center',
+                                      padding: '10px 12px',
+                                      fontSize: '0.85rem',
+                                    }}
+                                  >
+                                    <Play size={15} fill="currentColor" /> Practice Set
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleOpenShare(set, e)}
+                                    style={{
+                                      ...secondaryBtnStyle,
+                                      padding: '10px 12px',
+                                      borderRadius: '12px',
+                                    }}
+                                    title="Share this set with another account"
+                                  >
+                                    <Share2 size={16} color="#2563eb" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => handleDeleteSet(set.id, set.title, e)}
+                                    style={{
+                                      ...dangerBtnStyle,
+                                      padding: '10px 12px',
+                                      borderRadius: '12px',
+                                    }}
+                                    title="Delete this set"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
                                 </div>
                               </div>
-
-                              {/* Bottom Actions Row */}
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', paddingTop: '14px', borderTop: '1px solid #f1f5f9' }}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/set/${set.id}/practice`);
-                                  }}
-                                  style={{
-                                    ...primaryBtnStyle,
-                                    flex: 1,
-                                    justifyContent: 'center',
-                                    padding: '10px 12px',
-                                    fontSize: '0.85rem',
-                                  }}
-                                >
-                                  <Play size={15} fill="currentColor" /> Practice Set
-                                </button>
-                                <button
-                                  onClick={(e) => handleOpenShare(set, e)}
-                                  style={{
-                                    ...secondaryBtnStyle,
-                                    padding: '10px 12px',
-                                    borderRadius: '12px',
-                                  }}
-                                  title="Share this set with another account"
-                                >
-                                  <Share2 size={16} color="#2563eb" />
-                                </button>
-                                <button
-                                  onClick={(e) => handleDeleteSet(set.id, set.title, e)}
-                                  style={{
-                                    ...dangerBtnStyle,
-                                    padding: '10px 12px',
-                                    borderRadius: '12px',
-                                  }}
-                                  title="Delete this set"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                      </div>
                     </div>
                   )}
                 </div>
