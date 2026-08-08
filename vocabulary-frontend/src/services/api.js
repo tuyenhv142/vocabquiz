@@ -168,6 +168,17 @@ export const api = {
     return data;
   },
 
+  async updateSetCards(setId, cards) {
+    const res = await fetch(`${API_BASE}/api/sets/${setId}/cards`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cards }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to update set cards.');
+    return data;
+  },
+
   // --- Admin APIs ---
   async getAdminStats(adminEmail) {
     const res = await fetch(`${API_BASE}/api/admin/stats`, {

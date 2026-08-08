@@ -8,5 +8,6 @@ router.put('/cards/:id', cardController.updateCard);
 router.delete('/cards/:id', cardController.deleteCard);
 
 router.post('/sets/:id/cards/batch', cardController.batchCreateCards);
+router.put('/sets/:id/cards', cardController.updateSetCards);
 
 module.exports = router;

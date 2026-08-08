@@ -164,6 +164,7 @@ function normalizeCard(card = {}, defaultTermLang = 'en', defaultDefLang = 'vi')
   const defL = typeof card.definitionLang === 'string' ? card.definitionLang : (typeof card.definition_lang === 'string' ? card.definition_lang : (typeof defaultDefLang === 'string' ? defaultDefLang : 'vi'));
 
   return {
+    id: card.id || null,
     term: ensureText(card.term || card.word),
     definition: defL.startsWith('zh') ? formatChinesePinyin(rawDef) : rawDef,
     exampleSentence: ensureText(card.exampleSentence ?? card.example_sentence ?? card.example),
@@ -843,6 +844,7 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
 
     const cardsToSave = editCards
       .map((card) => ({
+        id: card.id || null,
         term: ensureText(card.term || card.word),
         definition: ensureText(card.definition || card.meaning),
         exampleSentence: ensureText(card.exampleSentence ?? card.example_sentence),
