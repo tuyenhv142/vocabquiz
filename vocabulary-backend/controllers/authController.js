@@ -317,6 +317,52 @@ async function deleteAccount(req, res) {
   }
 }
 
+/**
+ * GET /api/leaderboard - Community leaderboard ranking
+ */
+async function getLeaderboard(req, res) {
+  try {
+    const result = await db.query(
+      `SELECT 
+         u.id, 
+         u.email, 
+         COALESCE(COUNT(s.id), 0)::int AS set_count,
+         COALESCE(MAX(s.practice_percentage), 0)::int AS top_score,
+         COALESCE(SUM(CASE WHEN s.practice_percentage >= 80 THEN 1 ELSE 0 END), 0)::int AS mastered_sets
+       FROM users u
+       LEFT JOIN study_sets s ON u.id = s.user_id
+       GROUP BY u.id, u.email
+       ORDER BY mastered_sets DESC, top_score DESC, set_count DESC
+       LIMIT 20`
+    );
+
+    const leaderboard = result.rows.map((row, index) => {
+      const parts = row.email.split('@');
+      const name = parts[0].length > 4 ? `${parts[0].slice(0, 3)}***` : `${parts[0].slice(0, 1)}***`;
+      const maskedEmail = `${name}@${parts[1] || 'email.com'}`;
+      
+      const totalXP = (row.mastered_sets * 100) + (row.set_count * 20) + 50;
+      const streakDays = Math.max(1, Math.min(30, row.mastered_sets * 2 + 1));
+
+      return {
+        rank: index + 1,
+        id: row.id,
+        email: maskedEmail,
+        setCount: row.set_count,
+        topScore: row.top_score,
+        masteredSets: row.mastered_sets,
+        totalXP,
+        streakDays,
+      };
+    });
+
+    res.json(leaderboard);
+  } catch (err) {
+    console.error('Leaderboard error:', err);
+    res.status(500).json({ error: 'Failed to load leaderboard' });
+  }
+}
+
 module.exports = {
   sendOtp,
   verifyOtp,
@@ -325,4 +371,5 @@ module.exports = {
   forgotPassword,
   resetPassword,
   deleteAccount,
+  getLeaderboard,
 };

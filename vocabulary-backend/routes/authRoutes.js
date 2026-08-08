@@ -10,5 +10,6 @@ router.post('/auth/forgot-password', authController.forgotPassword);
 router.post('/auth/reset-password', authController.resetPassword);
 
 router.delete('/users/:id', authController.deleteAccount);
+router.get('/leaderboard', authController.getLeaderboard);
 
 module.exports = router;

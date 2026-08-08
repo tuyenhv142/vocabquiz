@@ -509,23 +509,28 @@ export default function App() {
                     const wod = getWordOfTheDay();
                     const isDoneToday = isDailyChallengeCompletedToday(user?.id || 'guest');
 
+                    // Auto-hide completely when completed today and collapsed
+                    if (isDoneToday && isDailyBannerCollapsed) {
+                      return null;
+                    }
+
                     if (isDailyBannerCollapsed) {
                       return (
                         <div style={{
                           marginBottom: '20px',
                           padding: '12px 18px',
                           borderRadius: '16px',
-                          backgroundColor: isDoneToday ? '#f0fdf4' : '#eff6ff',
-                          border: isDoneToday ? '1px solid #bbf7d0' : '1px solid #bfdbfe',
+                          backgroundColor: '#eff6ff',
+                          border: '1px solid #bfdbfe',
                           display: 'flex',
                           alignItems: 'center',
                           justify: 'space-between',
                           gap: '12px',
                         }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <CheckCircle2 size={18} color={isDoneToday ? '#16a34a' : '#2563eb'} />
+                            <Sparkles size={18} color="#2563eb" />
                             <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
-                              {isDoneToday ? '🎉 Thử thách hôm nay đã hoàn thành (+50 XP)' : `Word of the Day: ${wod.term}`}
+                              Word of the Day: {wod.term} ({wod.definition})
                             </span>
                           </div>
                           <button
