@@ -289,6 +289,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
   }, [currentIndex, sessionQueue, feedback, isFinished]);
 
   useEffect(() => {
+    if (isFinished) return;
     setSessionQueue(buildSessionQueue(cards, questionDirection === 'termToDef'));
     setCurrentIndex(0);
     setInputValue('');
@@ -306,7 +307,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     firstAttemptSetRef.current.clear();
     firstAttemptWrongSetRef.current.clear();
     wrongCardsRef.current = [];
-  }, [cards, questionDirection]);
+  }, [setInfo?.id, cards?.length, questionDirection]);
 
   const currentCard = sessionQueue[currentIndex] || null;
   const questionText = currentCard ? getQuestionText(currentCard) : '';
