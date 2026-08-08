@@ -886,6 +886,9 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
       if (onSaved) {
         await onSaved();
       }
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
       setError(err.message || 'Unable to save changes.');
     } finally {
