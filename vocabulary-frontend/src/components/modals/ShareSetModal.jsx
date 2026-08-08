@@ -55,9 +55,30 @@ export default function ShareSetModal({ setInfo, user, isOpen, onClose }) {
   };
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+    <div style={overlayStyle} onClick={sending ? undefined : onClose}>
+      <div style={{ ...modalStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         
+        {/* Sending Overlay */}
+        {sending && (
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 50,
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            color: '#0f172a',
+            fontWeight: 700,
+          }}>
+            <span style={{ fontSize: '0.95rem', color: '#2563eb' }}>Sending invitation... Please wait</span>
+          </div>
+        )}
+
         {/* Header */}
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -70,7 +91,7 @@ export default function ShareSetModal({ setInfo, user, isOpen, onClose }) {
             </div>
           </div>
 
-          <button onClick={onClose} style={closeBtnStyle} title="Close modal">
+          <button onClick={sending ? undefined : onClose} disabled={sending} style={{ ...closeBtnStyle, opacity: sending ? 0.5 : 1, cursor: sending ? 'not-allowed' : 'pointer' }} title="Close modal">
             <X size={18} />
           </button>
         </div>

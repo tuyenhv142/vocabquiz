@@ -734,9 +734,31 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
   };
 
   return (
-    <div style={modalOverlayStyle}>
-      <div style={modalContainerStyle}>
+    <div style={modalOverlayStyle} onClick={loading ? undefined : onClose}>
+      <div style={{ ...modalContainerStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         
+        {/* Loading Overlay inside Modal */}
+        {loading && (
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 50,
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            color: '#0f172a',
+            fontWeight: 700,
+          }}>
+            <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
+            <span style={{ fontSize: '0.95rem', color: '#2563eb' }}>Creating set... Please wait</span>
+          </div>
+        )}
+
         {/* Modal Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>
           <div>
@@ -747,7 +769,7 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
             </div>
             <h2 style={{ margin: '6px 0 0', fontSize: '1.4rem', color: '#0f172a', fontWeight: 800 }}>Create New Vocabulary Set</h2>
           </div>
-          <button onClick={onClose} style={closeBtnStyle} title="Close modal">
+          <button onClick={loading ? undefined : onClose} disabled={loading} style={{ ...closeBtnStyle, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }} title="Close modal">
             <X size={20} />
           </button>
         </div>
@@ -761,14 +783,16 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
               placeholder="Set Title (e.g. TOEFL Core Vocabulary 500)*"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              style={inputStyle}
+              disabled={loading}
+              style={{ ...inputStyle, opacity: loading ? 0.7 : 1 }}
               required
             />
             <textarea
               placeholder="Description (optional context or study goal)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              style={{ ...inputStyle, height: '60px', resize: 'vertical' }}
+              disabled={loading}
+              style={{ ...inputStyle, height: '60px', resize: 'vertical', opacity: loading ? 0.7 : 1 }}
             />
           </div>
 
@@ -1073,13 +1097,19 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
             <button
               type="button"
               onClick={addEmptyCard}
-              style={addBtnStyle}
+              disabled={loading}
+              style={{ ...addBtnStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
             >
               <Plus size={16} style={{ marginRight: '6px' }} /> Add Word Card
             </button>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button type="button" onClick={onClose} style={cancelBtnStyle}>
+              <button
+                type="button"
+                onClick={loading ? undefined : onClose}
+                disabled={loading}
+                style={{ ...cancelBtnStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}
+              >
                 Cancel
               </button>
               <button type="submit" disabled={loading} style={saveBtnStyle}>

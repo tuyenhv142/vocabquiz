@@ -71,10 +71,35 @@ export default function ImportSharedSetModal({ setId, user, isOpen, onClose, onI
     }
   };
 
+  const isBusy = loading || importing;
+
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+    <div style={overlayStyle} onClick={isBusy ? undefined : onClose}>
+      <div style={{ ...modalStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         
+        {/* Loading/Importing Overlay */}
+        {isBusy && (
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 50,
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            color: '#0f172a',
+            fontWeight: 700,
+          }}>
+            <span style={{ fontSize: '0.95rem', color: '#2563eb' }}>
+              {importing ? 'Importing set to your account...' : 'Loading shared set...'}
+            </span>
+          </div>
+        )}
+
         {/* Header */}
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -87,7 +112,7 @@ export default function ImportSharedSetModal({ setId, user, isOpen, onClose, onI
             </div>
           </div>
 
-          <button onClick={onClose} style={closeBtnStyle} title="Close modal">
+          <button onClick={isBusy ? undefined : onClose} disabled={isBusy} style={{ ...closeBtnStyle, opacity: isBusy ? 0.5 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }} title="Close modal">
             <X size={18} />
           </button>
         </div>
@@ -129,19 +154,21 @@ export default function ImportSharedSetModal({ setId, user, isOpen, onClose, onI
                     Please log in or sign up to add this set to your account.
                   </p>
                   <button
-                    onClick={onOpenAuth}
-                    style={primaryBtnStyle}
+                    onClick={isBusy ? undefined : onOpenAuth}
+                    disabled={isBusy}
+                    style={{ ...primaryBtnStyle, opacity: isBusy ? 0.6 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
                   >
                     <UserCheck size={16} /> Log In / Sign Up to Import
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={handleImport}
-                  disabled={importing}
+                  onClick={isBusy ? undefined : handleImport}
+                  disabled={isBusy}
                   style={{
                     ...primaryBtnStyle,
-                    opacity: importing ? 0.7 : 1,
+                    opacity: isBusy ? 0.7 : 1,
+                    cursor: isBusy ? 'not-allowed' : 'pointer',
                   }}
                 >
                   <Sparkles size={16} />

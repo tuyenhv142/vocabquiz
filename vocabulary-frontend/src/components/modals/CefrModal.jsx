@@ -43,8 +43,30 @@ export default function CefrModal({ isOpen, onClose, onImport, isNewUser = false
   };
 
   return (
-    <div style={overlayStyle}>
-      <div style={modalStyle}>
+    <div style={overlayStyle} onClick={loading ? undefined : onClose}>
+      <div style={{ ...modalStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+        
+        {/* Loading Overlay */}
+        {loading && (
+          <div style={{
+            position: 'absolute',
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(3px)',
+            zIndex: 50,
+            borderRadius: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            color: '#0f172a',
+            fontWeight: 700,
+          }}>
+            <span style={{ fontSize: '1rem', color: '#2563eb' }}>Importing CEFR sets... Please wait</span>
+          </div>
+        )}
+
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <Sparkles size={22} color="#2563eb" />
@@ -52,7 +74,7 @@ export default function CefrModal({ isOpen, onClose, onImport, isNewUser = false
               {isNewUser ? 'Choose Your CEFR Starter Sets' : 'Import Official CEFR Vocabulary Sets'}
             </h3>
           </div>
-          <button onClick={onClose} style={closeBtnStyle} aria-label="Close">
+          <button onClick={loading ? undefined : onClose} disabled={loading} style={{ ...closeBtnStyle, opacity: loading ? 0.5 : 1, cursor: loading ? 'not-allowed' : 'pointer' }} aria-label="Close">
             <X size={18} />
           </button>
         </div>
@@ -62,7 +84,7 @@ export default function CefrModal({ isOpen, onClose, onImport, isNewUser = false
         </p>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <button onClick={toggleAll} style={toggleAllBtnStyle}>
+          <button onClick={loading ? undefined : toggleAll} disabled={loading} style={{ ...toggleAllBtnStyle, opacity: loading ? 0.6 : 1, cursor: loading ? 'not-allowed' : 'pointer' }}>
             {selectedKeys.length === CEFR_LEVELS.length ? 'Deselect All' : 'Select All Levels'}
           </button>
           <span style={{ fontSize: '13px', color: '#64748b', fontWeight: 600 }}>
@@ -76,11 +98,13 @@ export default function CefrModal({ isOpen, onClose, onImport, isNewUser = false
             return (
               <div
                 key={lvl.key}
-                onClick={() => toggleKey(lvl.key)}
+                onClick={() => !loading && toggleKey(lvl.key)}
                 style={{
                   ...cardStyle,
                   borderColor: isChecked ? '#2563eb' : '#e2e8f0',
                   backgroundColor: isChecked ? '#eff6ff' : '#ffffff',
+                  opacity: loading ? 0.6 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
@@ -109,7 +133,7 @@ export default function CefrModal({ isOpen, onClose, onImport, isNewUser = false
         </div>
 
         <div style={footerStyle}>
-          <button onClick={onClose} style={cancelBtnStyle} disabled={loading}>
+          <button onClick={loading ? undefined : onClose} style={cancelBtnStyle} disabled={loading}>
             {isNewUser ? 'Skip for Now' : 'Cancel'}
           </button>
           <button onClick={handleSubmit} style={submitBtnStyle} disabled={loading}>

@@ -429,15 +429,17 @@ export default function App() {
                     </div>
                     <div style={{ display: 'flex', gap: '10px' }}>
                       <button
-                        onClick={openCefrModal}
-                        style={secondaryBtnStyle}
+                        onClick={loadingSets ? undefined : openCefrModal}
+                        disabled={loadingSets}
+                        style={{ ...secondaryBtnStyle, opacity: loadingSets ? 0.6 : 1, cursor: loadingSets ? 'not-allowed' : 'pointer' }}
                         title="Browse official CEFR English Vocabulary Sets (A1 to C2)"
                       >
                         <BookOpen size={16} /> Browse CEFR Sets (A1-C2)
                       </button>
                       <button
-                        onClick={() => setIsCreateOpen(true)}
-                        style={primaryBtnStyle}
+                        onClick={loadingSets ? undefined : () => setIsCreateOpen(true)}
+                        disabled={loadingSets}
+                        style={{ ...primaryBtnStyle, opacity: loadingSets ? 0.6 : 1, cursor: loadingSets ? 'not-allowed' : 'pointer' }}
                       >
                         <Plus size={16} /> New Set
                       </button>

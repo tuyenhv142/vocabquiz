@@ -896,11 +896,41 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
     }
   };
 
+  const isBusy = loading || translatingIndex !== null;
+
   return (
     <div style={pageStyle}>
+      {/* Full-screen blocking overlay when loading */}
+      {loading && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(15, 23, 42, 0.45)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 9999,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          color: '#ffffff',
+          fontWeight: 700,
+        }}>
+          <Loader2 size={38} style={{ animation: 'spin 1s linear infinite' }} />
+          <span style={{ fontSize: '1rem', background: 'rgba(15,23,42,0.85)', padding: '10px 20px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)' }}>
+            Processing... Please wait
+          </span>
+        </div>
+      )}
+
       {/* Top Header Bar matching PracticePage & FlashcardPage */}
       <div style={headerStyle}>
-        <button onClick={onClose} style={backBtnStyle} aria-label="Back to Set">
+        <button
+          onClick={isBusy ? undefined : onClose}
+          disabled={isBusy}
+          style={{ ...backBtnStyle, opacity: isBusy ? 0.5 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
+          aria-label="Back to Set"
+        >
           <ArrowLeft size={16} />
         </button>
         <div style={{ flex: 1 }}>
@@ -923,7 +953,8 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
               <select
                 value={termLang}
                 onChange={handleTermLangChange}
-                style={langSelectInputStyle}
+                disabled={isBusy}
+                style={{ ...langSelectInputStyle, opacity: isBusy ? 0.6 : 1 }}
               >
                 {SUPPORTED_LANGUAGES.map((lang) => (
                   <option key={lang.code} value={lang.code}>
@@ -940,7 +971,8 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
               <select
                 value={definitionLang}
                 onChange={handleDefLangChange}
-                style={langSelectInputStyle}
+                disabled={isBusy}
+                style={{ ...langSelectInputStyle, opacity: isBusy ? 0.6 : 1 }}
               >
                 {SUPPORTED_LANGUAGES.map((lang) => (
                   <option key={lang.code} value={lang.code}>
@@ -954,12 +986,18 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
           <button
             onClick={handleAutoTranslateAll}
             type="button"
-            style={translateAllBtnStyle}
+            disabled={isBusy}
+            style={{ ...translateAllBtnStyle, opacity: isBusy ? 0.6 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
             title="Auto-translate all cards to selected definition language"
           >
             <Wand2 size={14} /> Translate All
           </button>
-          <button onClick={deleteSet} type="button" style={deleteBtnActionStyle}>
+          <button
+            onClick={deleteSet}
+            type="button"
+            disabled={isBusy}
+            style={{ ...deleteBtnActionStyle, opacity: isBusy ? 0.6 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
+          >
             <Trash2 size={16} /> Delete Set
           </button>
         </div>
@@ -998,7 +1036,8 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                       <select
                         value={card.termLang || termLang}
                         onChange={(e) => handleCardLangChange(index, 'termLang', e.target.value)}
-                        style={cardLangSelectStyle}
+                        disabled={isBusy}
+                        style={{ ...cardLangSelectStyle, opacity: isBusy ? 0.6 : 1 }}
                       >
                         {SUPPORTED_LANGUAGES.map((l) => (
                           <option key={l.code} value={l.code}>
@@ -1010,7 +1049,8 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                       <select
                         value={card.definitionLang || definitionLang}
                         onChange={(e) => handleCardLangChange(index, 'definitionLang', e.target.value)}
-                        style={cardLangSelectStyle}
+                        disabled={isBusy}
+                        style={{ ...cardLangSelectStyle, opacity: isBusy ? 0.6 : 1 }}
                       >
                         {SUPPORTED_LANGUAGES.map((l) => (
                           <option key={l.code} value={l.code}>
@@ -1022,8 +1062,9 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                   </div>
                   <button
                     type="button"
-                    onClick={() => removeCard(index)}
-                    style={deleteBtnStyle}
+                    onClick={isBusy ? undefined : () => removeCard(index)}
+                    disabled={isBusy}
+                    style={{ ...deleteBtnStyle, opacity: isBusy ? 0.5 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
                     title="Remove card"
                     aria-label={`Remove word ${index + 1}`}
                   >
@@ -1039,11 +1080,13 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                     <input
                       value={card.term || ''}
                       onChange={(e) => handleCardChange(index, 'term', e.target.value)}
+                      disabled={isBusy}
                       placeholder="e.g. abundant"
                       style={{
                         ...inputStyle,
                         borderColor: duplicateIndex !== -1 ? '#f59e0b' : '#cbd5e1',
                         backgroundColor: duplicateIndex !== -1 ? '#fffbeb' : '#f8fafc',
+                        opacity: isBusy ? 0.7 : 1,
                       }}
                     />
                     {duplicateIndex !== -1 && (
@@ -1061,8 +1104,9 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                             <button
                               key={`${suggestion.term}-${suggestionIndex}`}
                               type="button"
-                              onClick={() => applyTermSuggestion(index, suggestion)}
-                              style={suggestionBtnStyle}
+                              onClick={isBusy ? undefined : () => applyTermSuggestion(index, suggestion)}
+                              disabled={isBusy}
+                              style={{ ...suggestionBtnStyle, opacity: isBusy ? 0.6 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
                             >
                               <span>{suggestion.term}</span>
                               <span style={suggestionSourceBadgeStyle(suggestion.source)}>
@@ -1082,8 +1126,9 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                     <input
                       value={card.partOfSpeech || card.part_of_speech || ''}
                       onChange={(e) => handleCardChange(index, 'partOfSpeech', e.target.value)}
+                      disabled={isBusy}
                       placeholder="noun, verb, adj..."
-                      style={inputStyle}
+                      style={{ ...inputStyle, opacity: isBusy ? 0.7 : 1 }}
                     />
                   </div>
                 </div>
@@ -1100,7 +1145,8 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                         <button
                           type="button"
                           onClick={() => handleTranslateCard(index)}
-                          style={translateCardBtnStyle}
+                          disabled={isBusy}
+                          style={{ ...translateCardBtnStyle, opacity: isBusy ? 0.6 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}
                           title={`Auto-translate term to ${SUPPORTED_LANGUAGES.find((l) => l.code === definitionLang)?.label.split(' ')[1] || definitionLang}`}
                         >
                           <Wand2 size={12} /> Auto-Translate
@@ -1111,9 +1157,10 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                   <textarea
                     value={card.definition || ''}
                     onChange={(e) => handleCardChange(index, 'definition', e.target.value)}
+                    disabled={isBusy}
                     placeholder="Enter definition or translation..."
                     rows={2}
-                    style={textareaStyle}
+                    style={{ ...textareaStyle, opacity: isBusy ? 0.7 : 1 }}
                   />
                 </div>
 
@@ -1122,9 +1169,10 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
                   <textarea
                     value={card.exampleSentence || card.example_sentence || ''}
                     onChange={(e) => handleCardChange(index, 'exampleSentence', e.target.value)}
+                    disabled={isBusy}
                     placeholder="e.g. There is abundant sunshine today."
                     rows={2}
-                    style={textareaStyle}
+                    style={{ ...textareaStyle, opacity: isBusy ? 0.7 : 1 }}
                   />
                 </div>
               </div>
@@ -1133,10 +1181,10 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
         </div>
 
         <div style={bottomActionRowStyle}>
-          <button onClick={addCard} type="button" style={addCardBtnStyle}>
+          <button onClick={addCard} type="button" disabled={isBusy} style={{ ...addCardBtnStyle, opacity: isBusy ? 0.6 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
             <Plus size={15} /> Add Word
           </button>
-          <button onClick={saveChanges} type="button" disabled={loading} style={primaryBtnStyle}>
+          <button onClick={saveChanges} type="button" disabled={isBusy} style={{ ...primaryBtnStyle, opacity: isBusy ? 0.75 : 1, cursor: isBusy ? 'not-allowed' : 'pointer' }}>
             {loading ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <Save size={15} />}
             {loading ? 'Saving...' : 'Save Changes'}
           </button>
