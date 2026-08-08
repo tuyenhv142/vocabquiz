@@ -2,7 +2,10 @@
  * Daily Discovery & Word of the Day Engine
  * Provides beginner-friendly and curated high-yield English words.
  * Limits daily quick practice sessions to 5 words max to prevent overwhelm for beginners.
+ * Features 3-day word cooldown so mastered words don't repeat for 3 days!
  */
+
+const HISTORY_STORAGE_KEY = 'vocab_daily_word_history';
 
 // Easy & Everyday English Words (A1 - B1 Level) — Perfect for beginners
 const EASY_DAILY_WORDS = [
@@ -132,7 +135,50 @@ const ADVANCED_DAILY_WORDS = [
   },
 ];
 
-const ALL_WORDS = [...EASY_DAILY_WORDS, ...ADVANCED_DAILY_WORDS];
+/**
+ * Gets word practice history map from localStorage
+ */
+function getDailyWordHistory() {
+  try {
+    const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (err) {
+    return {};
+  }
+}
+
+/**
+ * Marks words as completed today so they are excluded for the next 3 days
+ */
+export function recordDailyWordHistory(cards = []) {
+  if (!Array.isArray(cards)) return;
+  const history = getDailyWordHistory();
+  const now = Date.now();
+
+  cards.forEach((c) => {
+    if (c.term) {
+      history[c.term.toLowerCase()] = now;
+    }
+  });
+
+  try {
+    localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
+  } catch (err) {
+    console.error('Failed to save daily word history:', err);
+  }
+}
+
+/**
+ * Checks if a word was practiced within the last 3 days
+ */
+function isWordIn3DayCooldown(term) {
+  const history = getDailyWordHistory();
+  const lastTime = history[term.toLowerCase()];
+  if (!lastTime) return false;
+
+  const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+  return Date.now() - lastTime < THREE_DAYS_MS;
+}
 
 /**
  * Deterministically retrieves Word of the Day based on current date (YYYY-MM-DD)
@@ -152,14 +198,14 @@ export function getWordOfTheDay() {
 
 /**
  * Generates a light 5-word Daily Discovery Practice Set.
- * Capped at 5 words so beginners are not overwhelmed.
+ * Excludes words completed within the last 3 days!
  *
  * @param {Array} userSets - User's existing saved sets
  * @param {string} mode - 'easy' (beginner) or 'challenge' (5 high-yield words)
  */
 export function buildDailyDiscoverySet(userSets = [], mode = 'easy') {
   const todayWord = getWordOfTheDay();
-  const pool = mode === 'easy' ? [...EASY_DAILY_WORDS] : [...ADVANCED_DAILY_WORDS];
+  const rawPool = mode === 'easy' ? [...EASY_DAILY_WORDS] : [...ADVANCED_DAILY_WORDS];
 
   // Extract cards from user's existing sets
   if (Array.isArray(userSets)) {
@@ -167,7 +213,7 @@ export function buildDailyDiscoverySet(userSets = [], mode = 'easy') {
       if (Array.isArray(s.cards)) {
         s.cards.forEach((c) => {
           if (c.term && c.definition) {
-            pool.push({
+            rawPool.push({
               term: c.term,
               definition: c.definition,
               example_sentence: c.example_sentence || c.exampleSentence || '',
@@ -179,6 +225,12 @@ export function buildDailyDiscoverySet(userSets = [], mode = 'easy') {
     });
   }
 
+  // Filter out words that are in 3-day cooldown
+  const availablePool = rawPool.filter((item) => !isWordIn3DayCooldown(item.term));
+
+  // Fallback to rawPool if availablePool is less than 5 words
+  const finalPool = availablePool.length >= 5 ? availablePool : rawPool;
+
   // Shuffle & pick unique 5 cards including todayWord
   const uniqueMap = new Map();
   uniqueMap.set(todayWord.term.toLowerCase(), {
@@ -189,9 +241,9 @@ export function buildDailyDiscoverySet(userSets = [], mode = 'easy') {
     part_of_speech: todayWord.part_of_speech,
   });
 
-  const targetCount = 5; // Capped at 5 words as requested for easy beginner learning!
+  const targetCount = 5;
 
-  const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
+  const shuffledPool = [...finalPool].sort(() => 0.5 - Math.random());
   for (const item of shuffledPool) {
     if (uniqueMap.size >= targetCount) break;
     const key = item.term.toLowerCase();

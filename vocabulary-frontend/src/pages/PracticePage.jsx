@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { API_BASE } from '../config';
 import { recordLearningActivity, getUserRank } from '../utils/streakEngine';
+import { recordDailyWordHistory } from '../utils/dailyDiscovery';
 import {
   ArrowLeft,
   CheckCircle2,
@@ -389,6 +390,10 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
     const userId = savedUser ? JSON.parse(savedUser).id : 'guest';
     const streakResult = recordLearningActivity(userId, 50, isDailyDiscovery);
     setCompletedStreakData(streakResult);
+
+    if (isDailyDiscovery) {
+      recordDailyWordHistory(cards);
+    }
 
     const totalUnique = cards.length > 0 ? cards.length : (sessionQueue.length || 1);
     const wrongUniqueCount = firstAttemptWrongSetRef.current.size;
