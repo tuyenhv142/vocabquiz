@@ -208,7 +208,7 @@ async function cloneSet(req, res) {
       await client.query('ROLLBACK');
       return res.status(409).json({
         alreadyExists: true,
-        error: `Bộ từ vựng "${sourceSet.title}" đã có trong tài khoản của bạn rồi!`,
+        error: `The vocabulary set "${sourceSet.title}" already exists in your account!`,
       });
     }
 
@@ -362,7 +362,7 @@ async function seedDefaults(req, res) {
       await client.query('ROLLBACK');
       return res.status(409).json({
         alreadyExists: true,
-        error: `Tất cả các bộ từ CEFR được chọn (${skippedTitles.join(', ')}) đã có trong tài khoản của bạn rồi!`,
+        error: `All selected CEFR level sets (${skippedTitles.join(', ')}) already exist in your account!`,
       });
     }
 
