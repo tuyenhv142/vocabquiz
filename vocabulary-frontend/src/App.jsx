@@ -16,6 +16,84 @@ import { Plus, BookOpen, LogOut, Trash2, Sparkles, UserCheck, Layers, Clock, Tro
 
 import { API_BASE } from './config';
 
+/**
+ * SetDetailLoader — defined OUTSIDE App so it's a stable component reference.
+ * If defined inside App, every re-render of App creates a new function reference,
+ * causing React to unmount/remount the entire child tree (including PracticePage,
+ * wiping its state the moment the practice API response comes back).
+ */
+function SetDetailLoader({
+  mode,
+  selectedSet,
+  selectedCards,
+  loadSetDetails,
+  navigate,
+  onPracticeComplete,
+  onSaved,
+  onDeleted,
+}) {
+  const { setId } = useParams();
+
+  useEffect(() => {
+    if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
+      loadSetDetails(setId);
+    }
+  }, [setId]);
+
+  if (!selectedSet || String(selectedSet.id) !== String(setId)) {
+    const titles = {
+      flashcard: 'Loading Vocabulary Set...',
+      practice: 'Loading Quiz Set...',
+      edit: 'Loading Set Details...',
+    };
+    const subtitles = {
+      flashcard: 'Fetching set cards & details',
+      practice: 'Preparing quiz cards & options',
+      edit: 'Preparing edit mode',
+    };
+    return <LoadingOverlay inline title={titles[mode]} subtitle={subtitles[mode]} />;
+  }
+
+  if (mode === 'flashcard') {
+    return (
+      <FlashcardPage
+        setInfo={selectedSet}
+        cards={selectedCards}
+        onBack={() => navigate('/')}
+        onEdit={() => navigate(`/set/${setId}/edit`)}
+        onPractice={() => navigate(`/set/${setId}/practice`)}
+      />
+    );
+  }
+
+  if (mode === 'practice') {
+    return (
+      <PracticePage
+        setInfo={selectedSet}
+        cards={selectedCards}
+        onBack={() => navigate(`/set/${setId}`)}
+        onPracticeComplete={onPracticeComplete}
+      />
+    );
+  }
+
+  if (mode === 'edit') {
+    return (
+      <SetEditPage
+        setInfo={selectedSet}
+        cards={selectedCards}
+        onClose={() => navigate(`/set/${setId}`)}
+        onSaved={onSaved}
+        onDeleted={onDeleted}
+      />
+    );
+  }
+
+  return null;
+}
+
+
+
 export default function App() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -234,88 +312,18 @@ export default function App() {
     }
   }, []);
 
-  // --- Route Components for React Router ---
-  const SetFlashcardRoute = () => {
-    const { setId } = useParams();
-
-    useEffect(() => {
-      if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
-        loadSetDetails(setId);
-      }
-    }, [setId]);
-
-    if (!selectedSet || String(selectedSet.id) !== String(setId)) {
-      return <LoadingOverlay inline title="Loading Vocabulary Set..." subtitle="Fetching set cards & details" />;
+  const handlePracticeComplete = (updatedSet) => {
+    if (updatedSet) {
+      const targetId = updatedSet.id;
+      setSelectedSet((prev) => (prev ? { ...prev, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced } : prev));
+      setSets((prevSets) =>
+        prevSets.map((s) =>
+          String(s.id) === String(targetId)
+            ? { ...s, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced }
+            : s
+        )
+      );
     }
-
-    return (
-      <FlashcardPage
-        setInfo={selectedSet}
-        cards={selectedCards}
-        onBack={() => navigate('/')}
-        onEdit={() => navigate(`/set/${setId}/edit`)}
-        onPractice={() => navigate(`/set/${setId}/practice`)}
-      />
-    );
-  };
-
-  const SetPracticeRoute = () => {
-    const { setId } = useParams();
-
-    useEffect(() => {
-      if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
-        loadSetDetails(setId);
-      }
-    }, [setId]);
-
-    if (!selectedSet || String(selectedSet.id) !== String(setId)) {
-      return <LoadingOverlay inline title="Loading Quiz Set..." subtitle="Preparing quiz cards & options" />;
-    }
-
-    return (
-      <PracticePage
-        setInfo={selectedSet}
-        cards={selectedCards}
-        onBack={() => navigate(`/set/${setId}`)}
-        onPracticeComplete={(updatedSet) => {
-          if (updatedSet) {
-            const targetId = updatedSet.id || setId;
-            setSelectedSet((prev) => (prev ? { ...prev, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced } : prev));
-            setSets((prevSets) =>
-              prevSets.map((s) =>
-                String(s.id) === String(targetId)
-                  ? { ...s, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced }
-                  : s
-              )
-            );
-          }
-        }}
-      />
-    );
-  };
-
-  const SetEditRoute = () => {
-    const { setId } = useParams();
-
-    useEffect(() => {
-      if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
-        loadSetDetails(setId);
-      }
-    }, [setId]);
-
-    if (!selectedSet || String(selectedSet.id) !== String(setId)) {
-      return <LoadingOverlay inline title="Loading Set Details..." subtitle="Preparing edit mode" />;
-    }
-
-    return (
-      <SetEditPage
-        setInfo={selectedSet}
-        cards={selectedCards}
-        onClose={() => navigate(`/set/${setId}`)}
-        onSaved={handleReviewSaved}
-        onDeleted={handleReviewDeleted}
-      />
-    );
   };
 
   return (
@@ -648,9 +656,45 @@ export default function App() {
               }
             />
 
-            <Route path="/set/:setId" element={<SetFlashcardRoute />} />
-            <Route path="/set/:setId/practice" element={<SetPracticeRoute />} />
-            <Route path="/set/:setId/edit" element={<SetEditRoute />} />
+            <Route
+              path="/set/:setId"
+              element={
+                <SetDetailLoader
+                  selectedSet={selectedSet}
+                  selectedCards={selectedCards}
+                  loadSetDetails={loadSetDetails}
+                  navigate={navigate}
+                  mode="flashcard"
+                />
+              }
+            />
+            <Route
+              path="/set/:setId/practice"
+              element={
+                <SetDetailLoader
+                  selectedSet={selectedSet}
+                  selectedCards={selectedCards}
+                  loadSetDetails={loadSetDetails}
+                  navigate={navigate}
+                  mode="practice"
+                  onPracticeComplete={handlePracticeComplete}
+                />
+              }
+            />
+            <Route
+              path="/set/:setId/edit"
+              element={
+                <SetDetailLoader
+                  selectedSet={selectedSet}
+                  selectedCards={selectedCards}
+                  loadSetDetails={loadSetDetails}
+                  navigate={navigate}
+                  mode="edit"
+                  onSaved={handleReviewSaved}
+                  onDeleted={handleReviewDeleted}
+                />
+              }
+            />
             <Route path="/admin" element={<AdminDashboardPage currentUser={user} />} />
           </Routes>
         )}

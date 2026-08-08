@@ -158,18 +158,14 @@ async function updatePracticeResult(req, res) {
   }
 
   try {
-    const existing = await db.query('SELECT practice_percentage FROM study_sets WHERE id = $1', [setId]);
-    if (existing.rows.length === 0) {
-      return res.status(404).json({ error: 'Study set not found' });
-    }
-
-    const currentBest = existing.rows[0].practice_percentage;
-    const newPct = (currentBest != null && currentBest > percentage) ? currentBest : percentage;
-
     const result = await db.query(
       `UPDATE study_sets SET practice_percentage = $1, last_practiced = NOW() WHERE id = $2 RETURNING id, practice_percentage, last_practiced`,
-      [newPct, setId]
+      [percentage, setId]
     );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Study set not found' });
+    }
 
     res.json(result.rows[0]);
   } catch (err) {
