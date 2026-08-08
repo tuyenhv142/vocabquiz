@@ -504,216 +504,120 @@ export default function App() {
                     </div>
                   </div>
 
-                  {/* Daily Word of the Day & Quick Challenge Banner */}
+                  {/* Daily Word of the Day & Quick Challenge Banner (Auto-hide when done today & Max 2-lines height) */}
                   {(() => {
-                    const wod = getWordOfTheDay();
                     const isDoneToday = isDailyChallengeCompletedToday(user?.id || 'guest');
-
-                    // Auto-hide completely when completed today and collapsed
-                    if (isDoneToday && isDailyBannerCollapsed) {
+                    
+                    // Auto-hide completely once completed today!
+                    if (isDoneToday) {
                       return null;
                     }
 
-                    if (isDailyBannerCollapsed) {
-                      return (
-                        <div style={{
-                          marginBottom: '20px',
-                          padding: '12px 18px',
-                          borderRadius: '16px',
-                          backgroundColor: '#eff6ff',
-                          border: '1px solid #bfdbfe',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justify: 'space-between',
-                          gap: '12px',
-                        }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <Sparkles size={18} color="#2563eb" />
-                            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#0f172a' }}>
-                              Word of the Day: {wod.term} ({wod.definition})
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => setIsDailyBannerCollapsed(false)}
-                            style={{
-                              ...secondaryBtnStyle,
-                              height: '32px',
-                              padding: '0 12px',
-                              fontSize: '0.775rem',
-                              borderRadius: '10px',
-                            }}
-                          >
-                            <Eye size={14} /> Hiện thử thách
-                          </button>
-                        </div>
-                      );
-                    }
+                    const wod = getWordOfTheDay();
 
                     return (
                       <div style={{
-                        marginBottom: '20px',
-                        padding: '16px 20px',
-                        borderRadius: '20px',
+                        marginBottom: '16px',
+                        padding: '12px 18px',
+                        borderRadius: '16px',
                         backgroundColor: '#ffffff',
-                        border: isDoneToday ? '1px solid #bbf7d0' : '1px solid #bfdbfe',
-                        background: isDoneToday ? 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)' : 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
-                        boxShadow: '0 8px 24px -5px rgba(37, 99, 235, 0.06)',
+                        border: '1px solid #bfdbfe',
+                        background: 'linear-gradient(135deg, #eff6ff 0%, #ffffff 100%)',
+                        boxShadow: '0 4px 14px rgba(37, 99, 235, 0.05)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '14px',
+                        gap: '6px',
                       }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{
-                              width: '36px', height: '36px', borderRadius: '10px',
-                              backgroundColor: isDoneToday ? '#16a34a' : '#2563eb', color: '#ffffff',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        {/* Line 1: Word, Phonetic, POS, Definition & Action Buttons */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <Sparkles size={16} color="#2563eb" />
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              Daily Word:
+                            </span>
+                            <strong style={{ fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
+                              {wod.term}
+                            </strong>
+                            {wod.phonetic && (
+                              <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
+                                {wod.phonetic}
+                              </span>
+                            )}
+                            <span style={{
+                              fontSize: '0.675rem', fontWeight: 800, padding: '1px 6px', borderRadius: '6px',
+                              backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe'
                             }}>
-                              {isDoneToday ? <CheckCircle2 size={20} /> : <Sparkles size={20} />}
-                            </div>
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '0.7rem', fontWeight: 800, color: isDoneToday ? '#16a34a' : '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                  Daily Discovery • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                                {isDoneToday && (
-                                  <span style={{ fontSize: '0.7rem', fontWeight: 800, padding: '2px 7px', borderRadius: '8px', backgroundColor: '#dcfce7', color: '#15803d' }}>
-                                    ✅ Done Today (+50 XP)
-                                  </span>
-                                )}
-                              </div>
-                              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: '#0f172a' }}>
-                                Word of the Day (Từ Vựng Mỗi Ngày)
-                              </h3>
-                            </div>
+                              {wod.part_of_speech}
+                            </span>
+                            <span style={{ fontSize: '0.875rem', fontWeight: 700, color: '#16a34a' }}>
+                              💡 {wod.definition}
+                            </span>
+                            <button
+                              onClick={() => playPronunciation(wod.term)}
+                              style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '2px', display: 'inline-flex', alignItems: 'center' }}
+                              title="Listen pronunciation"
+                            >
+                              <Volume2 size={15} color="#2563eb" />
+                            </button>
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <button
                               onClick={() => handleStartDailyFlashcards('easy')}
                               style={{
                                 ...secondaryBtnStyle,
-                                height: '38px',
-                                padding: '0 14px',
-                                fontSize: '0.8rem',
-                                borderRadius: '12px',
+                                height: '32px',
+                                padding: '0 10px',
+                                fontSize: '0.75rem',
+                                borderRadius: '10px',
                                 border: '1px solid #bfdbfe',
                                 color: '#2563eb',
                                 backgroundColor: '#eff6ff',
                               }}
-                              title="Học thuộc 5 từ vựng bằng Flashcard trước khi kiểm tra"
+                              title="Learn 5 words with flashcards first"
                             >
-                              <BookOpen size={15} /> 📖 Học Flashcards (5 từ)
+                              <BookOpen size={13} /> 📖 Flashcards (5)
                             </button>
                             <button
                               onClick={() => handleStartDailyChallenge('easy')}
                               style={{
                                 ...primaryBtnStyle,
-                                height: '38px',
-                                padding: '0 16px',
-                                fontSize: '0.8rem',
-                                borderRadius: '12px',
+                                height: '32px',
+                                padding: '0 12px',
+                                fontSize: '0.75rem',
+                                borderRadius: '10px',
                                 backgroundColor: '#16a34a',
-                                boxShadow: '0 4px 12px rgba(22,163,74,0.25)',
+                                boxShadow: '0 2px 8px rgba(22,163,74,0.22)',
                               }}
-                              title="Vào làm bài kiểm tra trắc nghiệm ngay"
+                              title="Start 5-word quiz test"
                             >
-                              <Play size={14} fill="currentColor" /> 🌱 Kiểm Tra Ngay (5 từ)
+                              <Play size={13} fill="currentColor" /> 🌱 Quiz (5)
                             </button>
                             <button
                               onClick={() => handleStartDailyChallenge('challenge')}
                               style={{
                                 ...secondaryBtnStyle,
-                                height: '38px',
-                                padding: '0 14px',
-                                fontSize: '0.8rem',
-                                borderRadius: '12px',
+                                height: '32px',
+                                padding: '0 10px',
+                                fontSize: '0.75rem',
+                                borderRadius: '10px',
                                 border: '1px solid #fed7aa',
                                 color: '#ea580c',
                                 backgroundColor: '#fff7ed',
                               }}
-                              title="Thử thách 5 từ nâng cao"
+                              title="Advanced 5-word challenge"
                             >
-                              ⚡ Thử thách
+                              ⚡ Challenge
                             </button>
-                            {isDoneToday && (
-                              <button
-                                onClick={() => setIsDailyBannerCollapsed(true)}
-                                style={{
-                                  ...secondaryBtnStyle,
-                                  height: '38px',
-                                  padding: '0 10px',
-                                  borderRadius: '12px',
-                                  color: '#64748b',
-                                }}
-                                title="Ẩn khung thử thách"
-                              >
-                                <EyeOff size={15} />
-                              </button>
-                            )}
                           </div>
                         </div>
 
-                        <div style={{
-                          backgroundColor: '#ffffff',
-                          borderRadius: '14px',
-                          padding: '14px 18px',
-                          border: '1px solid #dbeafe',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justify: 'space-between',
-                          flexWrap: 'wrap',
-                          gap: '12px',
-                        }}>
-                          <div style={{ flex: 1, minWidth: '220px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
-                              <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800, color: '#0f172a' }}>
-                                {wod.term}
-                              </h2>
-                              {wod.phonetic && (
-                                <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>
-                                  {wod.phonetic}
-                                </span>
-                              )}
-                              <span style={{
-                                fontSize: '0.7rem', fontWeight: 800, padding: '2px 7px', borderRadius: '8px',
-                                backgroundColor: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe'
-                              }}>
-                                {wod.part_of_speech}
-                              </span>
-                              <span style={{
-                                fontSize: '0.7rem', fontWeight: 800, padding: '2px 7px', borderRadius: '8px',
-                                backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1'
-                              }}>
-                                {wod.level}
-                              </span>
-                            </div>
-
-                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#16a34a', marginBottom: '4px' }}>
-                              💡 {wod.definition}
-                            </div>
-
-                            {wod.example_sentence && (
-                              <div style={{ fontSize: '0.8rem', color: '#475569', fontStyle: 'italic' }}>
-                                "{wod.example_sentence}"
-                              </div>
-                            )}
+                        {/* Line 2: Example Sentence */}
+                        {wod.example_sentence && (
+                          <div style={{ fontSize: '0.775rem', color: '#64748b', fontStyle: 'italic', paddingLeft: '24px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            "{wod.example_sentence}"
                           </div>
-
-                          <button
-                            onClick={() => playPronunciation(wod.term)}
-                            style={{
-                              ...secondaryBtnStyle,
-                              height: '36px',
-                              padding: '0 12px',
-                              fontSize: '0.8rem',
-                              borderRadius: '10px',
-                            }}
-                            title="Listen to English pronunciation"
-                          >
-                            <Volume2 size={15} color="#2563eb" /> Listen
-                          </button>
-                        </div>
+                        )}
                       </div>
                     );
                   })()}
