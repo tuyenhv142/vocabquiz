@@ -167,7 +167,7 @@ async function updatePracticeResult(req, res) {
     const newPct = (currentBest != null && currentBest > percentage) ? currentBest : percentage;
 
     const result = await db.query(
-      `UPDATE study_sets SET practice_percentage = $1, last_practiced = NOW() WHERE id = $2 RETURNING practice_percentage, last_practiced`,
+      `UPDATE study_sets SET practice_percentage = $1, last_practiced = NOW() WHERE id = $2 RETURNING id, practice_percentage, last_practiced`,
       [newPct, setId]
     );
 

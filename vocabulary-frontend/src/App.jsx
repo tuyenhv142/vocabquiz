@@ -239,12 +239,12 @@ export default function App() {
     const { setId } = useParams();
 
     useEffect(() => {
-      if (setId && (!selectedSet || selectedSet.id !== setId)) {
+      if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
         loadSetDetails(setId);
       }
     }, [setId]);
 
-    if (!selectedSet || selectedSet.id !== setId) {
+    if (!selectedSet || String(selectedSet.id) !== String(setId)) {
       return <LoadingOverlay inline title="Loading Vocabulary Set..." subtitle="Fetching set cards & details" />;
     }
 
@@ -263,12 +263,12 @@ export default function App() {
     const { setId } = useParams();
 
     useEffect(() => {
-      if (setId && (!selectedSet || selectedSet.id !== setId)) {
+      if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
         loadSetDetails(setId);
       }
     }, [setId]);
 
-    if (!selectedSet || selectedSet.id !== setId) {
+    if (!selectedSet || String(selectedSet.id) !== String(setId)) {
       return <LoadingOverlay inline title="Loading Quiz Set..." subtitle="Preparing quiz cards & options" />;
     }
 
@@ -279,10 +279,11 @@ export default function App() {
         onBack={() => navigate(`/set/${setId}`)}
         onPracticeComplete={(updatedSet) => {
           if (updatedSet) {
+            const targetId = updatedSet.id || setId;
             setSelectedSet((prev) => (prev ? { ...prev, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced } : prev));
             setSets((prevSets) =>
               prevSets.map((s) =>
-                s.id === updatedSet.id
+                String(s.id) === String(targetId)
                   ? { ...s, practice_percentage: updatedSet.practice_percentage, last_practiced: updatedSet.last_practiced }
                   : s
               )
@@ -297,12 +298,12 @@ export default function App() {
     const { setId } = useParams();
 
     useEffect(() => {
-      if (setId && (!selectedSet || selectedSet.id !== setId)) {
+      if (setId && (!selectedSet || String(selectedSet.id) !== String(setId))) {
         loadSetDetails(setId);
       }
     }, [setId]);
 
-    if (!selectedSet || selectedSet.id !== setId) {
+    if (!selectedSet || String(selectedSet.id) !== String(setId)) {
       return <LoadingOverlay inline title="Loading Set Details..." subtitle="Preparing edit mode" />;
     }
 
