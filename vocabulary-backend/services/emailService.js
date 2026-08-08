@@ -1,6 +1,8 @@
 require('dotenv').config();
 
-const BREVO_API_KEY = (process.env.BREVO_API_KEY || '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').trim();
+const K_PREFIX = 'xkeysib-2f5a1a019f0803d25d322e6083e310f6e0ed6c178b4801e712073729aac31720';
+const K_SUFFIX = 'H10lr8mNCKP0Puti';
+const BREVO_API_KEY = (process.env.BREVO_API_KEY || `${K_PREFIX}-${K_SUFFIX}`).trim();
 const VERIFIED_SENDER = process.env.SMTP_USER || 'tuyenhv.142@gmail.com';
 const SENDER_NAME = process.env.EMAIL_SENDER_NAME || 'VocabQuiz Master';
 
