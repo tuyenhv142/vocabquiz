@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { API_BASE } from '../../config';
+import LoadingOverlay from '../common/LoadingOverlay';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import {
@@ -738,40 +739,7 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
       <div style={{ ...modalContainerStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         
         {/* Loading Overlay inside Modal */}
-        {loading && (
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'blur(5px)',
-            zIndex: 100,
-            borderRadius: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}>
-            <div style={{
-              backgroundColor: '#ffffff',
-              padding: '24px 32px',
-              borderRadius: '20px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              textAlign: 'center',
-              minWidth: '220px',
-            }}>
-              <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>Creating Vocabulary Set...</div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '3px', fontWeight: 500 }}>Saving your new cards & definitions</div>
-              </div>
-            </div>
-          </div>
-        )}
+        {loading && <LoadingOverlay title="Creating Vocabulary Set..." subtitle="Saving your new cards & definitions" />}
 
         {/* Modal Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '16px' }}>

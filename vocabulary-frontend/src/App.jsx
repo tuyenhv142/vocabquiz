@@ -5,6 +5,7 @@ import CreateSetModal from './components/modals/CreateSetModal';
 import CefrModal from './components/modals/CefrModal';
 import ShareSetModal from './components/modals/ShareSetModal';
 import ImportSharedSetModal from './components/modals/ImportSharedSetModal';
+import LoadingOverlay from './components/common/LoadingOverlay';
 
 import FlashcardPage from './pages/FlashcardPage';
 import SetEditPage from './pages/SetEditPage';
@@ -244,11 +245,7 @@ export default function App() {
     }, [setId]);
 
     if (!selectedSet || selectedSet.id !== setId) {
-      return (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
-          Loading vocabulary set...
-        </div>
-      );
+      return <LoadingOverlay inline title="Loading Vocabulary Set..." subtitle="Fetching set cards & details" />;
     }
 
     return (
@@ -272,11 +269,7 @@ export default function App() {
     }, [setId]);
 
     if (!selectedSet || selectedSet.id !== setId) {
-      return (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
-          Loading quiz set...
-        </div>
-      );
+      return <LoadingOverlay inline title="Loading Quiz Set..." subtitle="Preparing quiz cards & options" />;
     }
 
     return (
@@ -310,11 +303,7 @@ export default function App() {
     }, [setId]);
 
     if (!selectedSet || selectedSet.id !== setId) {
-      return (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>
-          Loading set details...
-        </div>
-      );
+      return <LoadingOverlay inline title="Loading Set Details..." subtitle="Preparing edit mode" />;
     }
 
     return (
@@ -488,9 +477,7 @@ export default function App() {
                   )}
 
                   {loadingSets ? (
-                    <div style={cardContainerStyle}>
-                      <div style={{ padding: '30px', textAlign: 'center', color: '#64748b', fontWeight: 600 }}>Loading your sets...</div>
-                    </div>
+                    <LoadingOverlay inline title="Loading Your Vocabulary Sets..." subtitle="Fetching saved sets from database" />
                   ) : sets.length === 0 ? (
                     <div style={{ ...welcomeCardStyle, padding: '40px 20px' }}>
                       <BookOpen size={32} color="#94a3b8" style={{ marginBottom: '10px' }} />

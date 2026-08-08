@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Share2, Copy, Check, Send, Mail, X, Link as LinkIcon, Sparkles, AlertCircle, Loader2 } from 'lucide-react';
 import { API_BASE } from '../../config';
+import LoadingOverlay from '../common/LoadingOverlay';
 
 export default function ShareSetModal({ setInfo, user, isOpen, onClose }) {
   const [copied, setCopied] = useState(false);
@@ -59,40 +60,7 @@ export default function ShareSetModal({ setInfo, user, isOpen, onClose }) {
       <div style={{ ...modalStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         
         {/* Sending Overlay */}
-        {sending && (
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'blur(5px)',
-            zIndex: 100,
-            borderRadius: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}>
-            <div style={{
-              backgroundColor: '#ffffff',
-              padding: '24px 32px',
-              borderRadius: '20px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              textAlign: 'center',
-              minWidth: '220px',
-            }}>
-              <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>Sending Email Invitation...</div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '3px', fontWeight: 500 }}>Delivering invitation via Brevo</div>
-              </div>
-            </div>
-          </div>
-        )}
+        {sending && <LoadingOverlay title="Sending Email Invitation..." subtitle="Delivering invitation via Brevo" />}
 
         {/* Header */}
         <div style={headerStyle}>

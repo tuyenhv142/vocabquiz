@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BookOpen, Check, ArrowRight, X, Sparkles, Layers, ShieldCheck, Loader2 } from 'lucide-react';
 import { API_BASE } from '../../config';
+import LoadingOverlay from '../common/LoadingOverlay';
 
 const CEFR_LEVELS = [
   { key: 'A1', name: 'Level A1', title: 'Beginner (Căn Bản)', desc: 'Basic everyday words: hello, apple, book, family...' },
@@ -47,40 +48,7 @@ export default function CefrModal({ isOpen, onClose, onImport, isNewUser = false
       <div style={{ ...modalStyle, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
         
         {/* Loading Overlay */}
-        {loading && (
-          <div style={{
-            position: 'absolute',
-            top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.92)',
-            backdropFilter: 'blur(5px)',
-            zIndex: 100,
-            borderRadius: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}>
-            <div style={{
-              backgroundColor: '#ffffff',
-              padding: '24px 32px',
-              borderRadius: '20px',
-              border: '1px solid #e2e8f0',
-              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '12px',
-              textAlign: 'center',
-              minWidth: '220px',
-            }}>
-              <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
-              <div>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>Importing CEFR Sets...</div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '3px', fontWeight: 500 }}>Adding official vocabulary to your dashboard</div>
-              </div>
-            </div>
-          </div>
-        )}
+        {loading && <LoadingOverlay title="Importing CEFR Sets..." subtitle="Adding official vocabulary to your dashboard" />}
 
         <div style={headerStyle}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

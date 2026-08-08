@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE } from '../config';
 import { formatChinesePinyin } from '../utils/pinyin';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 import {
   ArrowLeft,
   Plus,
@@ -901,39 +902,7 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
   return (
     <div style={pageStyle}>
       {/* Full-screen blocking overlay when loading */}
-      {loading && (
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.55)',
-          backdropFilter: 'blur(6px)',
-          zIndex: 9999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '28px 36px',
-            borderRadius: '24px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '14px',
-            textAlign: 'center',
-            minWidth: '240px',
-          }}>
-            <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
-            <div>
-              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>Saving Changes...</div>
-              <div style={{ fontSize: '0.825rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>Updating vocabulary set & cards</div>
-            </div>
-          </div>
-        </div>
-      )}
+      {loading && <LoadingOverlay fullScreen title="Saving Changes..." subtitle="Updating vocabulary set & cards" />}
 
       {/* Top Header Bar matching PracticePage & FlashcardPage */}
       <div style={headerStyle}>
