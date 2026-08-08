@@ -323,6 +323,7 @@ async function deleteAccount(req, res) {
 async function getLeaderboard(req, res) {
   const currentUserId = req.query.userId;
   const currentUserXP = req.query.userXP ? parseInt(req.query.userXP, 10) : null;
+  const currentUserStreak = req.query.userStreak ? parseInt(req.query.userStreak, 10) : null;
 
   try {
     const result = await db.query(
@@ -331,29 +332,33 @@ async function getLeaderboard(req, res) {
          u.email, 
          COALESCE(COUNT(s.id), 0)::int AS set_count,
          COALESCE(MAX(s.practice_percentage), 0)::int AS top_score,
-         COALESCE(SUM(s.practice_percentage), 0)::int AS total_practice_score,
+         COALESCE(COUNT(s.last_practiced), 0)::int AS practiced_count,
          COALESCE(SUM(CASE WHEN s.practice_percentage >= 80 THEN 1 ELSE 0 END), 0)::int AS mastered_sets
        FROM users u
        LEFT JOIN study_sets s ON u.id = s.user_id
        GROUP BY u.id, u.email
-       ORDER BY total_practice_score DESC, mastered_sets DESC, set_count DESC
+       ORDER BY mastered_sets DESC, practiced_count DESC, set_count DESC
        LIMIT 20`
     );
 
-    const leaderboard = result.rows.map((row, index) => {
+    const leaderboard = result.rows.map((row) => {
       const parts = row.email.split('@');
       const name = parts[0].length > 4 ? `${parts[0].slice(0, 3)}***` : `${parts[0].slice(0, 1)}***`;
       const maskedEmail = `${name}@${parts[1] || 'email.com'}`;
       
-      let totalXP = row.total_practice_score + (row.mastered_sets * 50) + (row.set_count * 10);
-      if (currentUserId && String(row.id) === String(currentUserId) && currentUserXP != null && currentUserXP > 0) {
-        totalXP = Math.max(totalXP, currentUserXP);
+      const isCurrentUser = currentUserId && String(row.id) === String(currentUserId);
+      
+      let totalXP = row.practiced_count * 50;
+      if (isCurrentUser && currentUserXP != null) {
+        totalXP = currentUserXP;
       }
 
-      const streakDays = Math.max(1, Math.min(30, row.mastered_sets * 2 + 1));
+      let streakDays = row.practiced_count > 0 ? Math.max(1, Math.min(30, row.mastered_sets * 2 + 1)) : 0;
+      if (isCurrentUser && currentUserStreak != null) {
+        streakDays = currentUserStreak;
+      }
 
       return {
-        rank: index + 1,
         id: row.id,
         email: maskedEmail,
         setCount: row.set_count,
@@ -361,7 +366,14 @@ async function getLeaderboard(req, res) {
         masteredSets: row.mastered_sets,
         totalXP,
         streakDays,
+        isCurrentUser,
       };
+    });
+
+    // Sort leaderboard by totalXP descending
+    leaderboard.sort((a, b) => b.totalXP - a.totalXP || b.masteredSets - a.masteredSets);
+    leaderboard.forEach((item, idx) => {
+      item.rank = idx + 1;
     });
 
     res.json(leaderboard);

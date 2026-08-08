@@ -19,7 +19,7 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
-      const url = `${API_BASE}/api/leaderboard?userId=${userId || ''}&userXP=${streakData.totalXP || 0}`;
+      const url = `${API_BASE}/api/leaderboard?userId=${userId || ''}&userXP=${streakData.totalXP || 0}&userStreak=${streakData.currentStreak || 0}`;
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
