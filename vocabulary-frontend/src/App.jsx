@@ -263,11 +263,18 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, levels: selectedLevels }),
       });
-      if (response.ok) {
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Failed to import default sets.');
+      } else {
+        if (data.skipped && data.skipped.length > 0 && data.sets?.length > 0) {
+          alert(`🎉 Imported ${data.sets.length} new CEFR set(s). (Skipped ${data.skipped.join(', ')} as they are already in your account).`);
+        }
         await loadUserSets(user.id);
       }
     } catch (err) {
       console.error('Failed to load default sets:', err);
+      alert(err.message || 'Failed to import CEFR sets.');
     } finally {
       setLoadingSets(false);
     }

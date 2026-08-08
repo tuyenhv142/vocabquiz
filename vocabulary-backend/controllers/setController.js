@@ -197,6 +197,21 @@ async function cloneSet(req, res) {
     }
 
     const sourceSet = setRes.rows[0];
+
+    // Check if user already has this set (by matching title or title + " (Shared)")
+    const existingCheck = await client.query(
+      `SELECT id, title FROM study_sets WHERE user_id = $1 AND (LOWER(title) = LOWER($2) OR LOWER(title) = LOWER($3))`,
+      [userId, sourceSet.title, `${sourceSet.title} (Shared)`]
+    );
+
+    if (existingCheck.rows.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        alreadyExists: true,
+        error: `Bộ từ vựng "${sourceSet.title}" đã có trong tài khoản của bạn rồi!`,
+      });
+    }
+
     const cardsRes = await client.query('SELECT * FROM cards WHERE set_id = $1 ORDER BY position ASC', [sourceSetId]);
     const sourceCards = cardsRes.rows;
 
@@ -296,10 +311,24 @@ async function seedDefaults(req, res) {
   try {
     await client.query('BEGIN');
 
+    // Check existing titles for user
+    const existingSetsRes = await client.query(
+      `SELECT LOWER(title) as title FROM study_sets WHERE user_id = $1`,
+      [userId]
+    );
+    const existingTitles = existingSetsRes.rows.map((r) => r.title.trim().toLowerCase());
+
     const createdSets = [];
+    const skippedTitles = [];
+
     for (const level of levelsToSeed) {
       const defaultData = defaultLevels[level];
       if (!defaultData) continue;
+
+      if (existingTitles.includes(defaultData.title.trim().toLowerCase())) {
+        skippedTitles.push(defaultData.title);
+        continue;
+      }
 
       const setRes = await client.query(
         `INSERT INTO study_sets (user_id, title, description, is_public) 
@@ -329,8 +358,20 @@ async function seedDefaults(req, res) {
       });
     }
 
+    if (createdSets.length === 0 && skippedTitles.length > 0) {
+      await client.query('ROLLBACK');
+      return res.status(409).json({
+        alreadyExists: true,
+        error: `Tất cả các bộ từ CEFR được chọn (${skippedTitles.join(', ')}) đã có trong tài khoản của bạn rồi!`,
+      });
+    }
+
     await client.query('COMMIT');
-    res.status(201).json({ message: 'Default sets imported successfully.', sets: createdSets });
+    res.status(201).json({
+      message: 'Default sets processed.',
+      sets: createdSets,
+      skipped: skippedTitles,
+    });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Failed to seed default sets:', err);
