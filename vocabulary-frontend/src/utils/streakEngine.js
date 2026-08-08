@@ -4,6 +4,8 @@
  * and user leaderboard rankings.
  */
 
+import { API_BASE } from '../config';
+
 const STORAGE_KEY_PREFIX = 'vocab_user_streak_';
 
 function getTodayString() {
@@ -105,6 +107,16 @@ export function recordLearningActivity(userId = 'guest', pointsEarned = 50, isDa
 
   const key = `${STORAGE_KEY_PREFIX}${userId}`;
   localStorage.setItem(key, JSON.stringify(updatedData));
+
+  // Sync to PostgreSQL DB so all devices & accounts see unified leaderboard!
+  if (userId && userId !== 'guest') {
+    fetch(`${API_BASE}/api/users/activity`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId, pointsEarned, isDailyChallenge }),
+    }).catch((err) => console.error('Failed DB sync activity:', err));
+  }
+
   return updatedData;
 }
 

@@ -318,7 +318,73 @@ async function deleteAccount(req, res) {
 }
 
 /**
- * GET /api/leaderboard - Community leaderboard ranking
+ * POST /api/users/activity - Record user practice activity and update streak & XP in DB
+ */
+async function recordUserActivity(req, res) {
+  const { userId, pointsEarned = 50, isDailyChallenge = false } = req.body;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+
+  try {
+    const userRes = await db.query('SELECT * FROM users WHERE id = $1', [userId]);
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = userRes.rows[0];
+    const lastActiveStr = user.last_active_date ? new Date(user.last_active_date).toISOString().split('T')[0] : null;
+    const lastDailyStr = user.last_daily_completed_date ? new Date(user.last_daily_completed_date).toISOString().split('T')[0] : null;
+
+    const isAlreadyCompletedDailyToday = isDailyChallenge && lastDailyStr === todayStr;
+    const actualPointsEarned = isAlreadyCompletedDailyToday ? 0 : pointsEarned;
+
+    let newStreak = user.current_streak || 0;
+    if (!lastActiveStr) {
+      newStreak = 1;
+    } else if (lastActiveStr === todayStr) {
+      newStreak = newStreak > 0 ? newStreak : 1;
+    } else if (lastActiveStr === yesterdayStr) {
+      newStreak += 1;
+    } else {
+      newStreak = 1;
+    }
+
+    const newLongest = Math.max(user.longest_streak || 0, newStreak);
+    const newXP = (user.xp_points || 0) + actualPointsEarned;
+    const newDailyDate = isDailyChallenge ? todayStr : (user.last_daily_completed_date ? lastDailyStr : null);
+
+    await db.query(
+      `UPDATE users 
+       SET xp_points = $1, 
+           current_streak = $2, 
+           longest_streak = $3, 
+           last_active_date = $4, 
+           last_daily_completed_date = $5,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6`,
+      [newXP, newStreak, newLongest, todayStr, newDailyDate, userId]
+    );
+
+    res.json({
+      xp_points: newXP,
+      current_streak: newStreak,
+      longest_streak: newLongest,
+      last_active_date: todayStr,
+      last_daily_completed_date: newDailyDate,
+      alreadyRewardedToday: isAlreadyCompletedDailyToday,
+    });
+  } catch (err) {
+    console.error('recordUserActivity error:', err);
+    res.status(500).json({ error: 'Failed to record user activity' });
+  }
+}
+
+/**
+ * GET /api/leaderboard - Real-time unified community leaderboard ranking from DB
  */
 async function getLeaderboard(req, res) {
   const currentUserId = req.query.userId;
@@ -330,15 +396,16 @@ async function getLeaderboard(req, res) {
       `SELECT 
          u.id, 
          u.email, 
+         COALESCE(u.xp_points, 0)::int AS db_xp,
+         COALESCE(u.current_streak, 0)::int AS db_streak,
          COALESCE(COUNT(s.id), 0)::int AS set_count,
          COALESCE(MAX(s.practice_percentage), 0)::int AS top_score,
-         COALESCE(COUNT(s.last_practiced), 0)::int AS practiced_count,
          COALESCE(SUM(CASE WHEN s.practice_percentage >= 80 THEN 1 ELSE 0 END), 0)::int AS mastered_sets
        FROM users u
        LEFT JOIN study_sets s ON u.id = s.user_id
-       GROUP BY u.id, u.email
-       ORDER BY mastered_sets DESC, practiced_count DESC, set_count DESC
-       LIMIT 20`
+       GROUP BY u.id, u.email, u.xp_points, u.current_streak
+       ORDER BY db_xp DESC, db_streak DESC, mastered_sets DESC, set_count DESC
+       LIMIT 30`
     );
 
     const leaderboard = result.rows.map((row) => {
@@ -348,14 +415,14 @@ async function getLeaderboard(req, res) {
       
       const isCurrentUser = currentUserId && String(row.id) === String(currentUserId);
       
-      let totalXP = row.practiced_count * 50;
+      let totalXP = row.db_xp;
       if (isCurrentUser && currentUserXP != null) {
-        totalXP = currentUserXP;
+        totalXP = Math.max(totalXP, currentUserXP);
       }
 
-      let streakDays = row.practiced_count > 0 ? Math.max(1, Math.min(30, row.mastered_sets * 2 + 1)) : 0;
+      let streakDays = row.db_streak;
       if (isCurrentUser && currentUserStreak != null) {
-        streakDays = currentUserStreak;
+        streakDays = Math.max(streakDays, currentUserStreak);
       }
 
       return {
@@ -371,7 +438,7 @@ async function getLeaderboard(req, res) {
     });
 
     // Sort leaderboard by totalXP descending
-    leaderboard.sort((a, b) => b.totalXP - a.totalXP || b.masteredSets - a.masteredSets);
+    leaderboard.sort((a, b) => b.totalXP - a.totalXP || b.streakDays - a.streakDays || b.masteredSets - a.masteredSets);
     leaderboard.forEach((item, idx) => {
       item.rank = idx + 1;
     });
@@ -392,4 +459,5 @@ module.exports = {
   resetPassword,
   deleteAccount,
   getLeaderboard,
+  recordUserActivity,
 };

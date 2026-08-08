@@ -11,5 +11,6 @@ router.post('/auth/reset-password', authController.resetPassword);
 
 router.delete('/users/:id', authController.deleteAccount);
 router.get('/leaderboard', authController.getLeaderboard);
+router.post('/users/activity', authController.recordUserActivity);
 
 module.exports = router;

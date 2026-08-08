@@ -42,6 +42,22 @@ pool.on('connect', () => {
   console.log('Connected to PostgreSQL database');
 });
 
+async function initSchema() {
+  try {
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS xp_points INTEGER DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS current_streak INTEGER DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS longest_streak INTEGER DEFAULT 0;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_active_date DATE;
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS last_daily_completed_date DATE;
+    `);
+    console.log('✅ DB Schema updated: user streak & xp columns initialized');
+  } catch (err) {
+    console.error('Schema init error (non-fatal):', err.message);
+  }
+}
+initSchema();
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,
