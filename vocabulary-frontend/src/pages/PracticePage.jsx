@@ -256,6 +256,16 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
   };
 
   const inputRef = useRef(null);
+  const autoAdvanceTimerRef = useRef(null);
+
+  // Clear auto advance timer on unmount
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+    };
+  }, []);
 
   // Auto-focus input box whenever question changes or written mode is activated
   useEffect(() => {
@@ -365,6 +375,9 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
   const completed = isFinished;
 
   const finishPractice = async () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+    }
     setIsFinished(true);
     setFeedback(null);
     setShowCorrection(false);
@@ -398,6 +411,10 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
 
   const processQuestionAnswer = (isCorrect, chosenText) => {
     if (!currentCard || feedback) return;
+
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+    }
 
     const cardId = currentCard.id || currentCard.term;
 
@@ -480,7 +497,7 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
 
     // Auto-advance: 2.4s for written mistakes so user can study correct answer, 1.1s for others
     const delay = !isCorrect && practiceMode === QuestionType.WRITTEN_INPUT ? 2400 : 1100;
-    setTimeout(() => {
+    autoAdvanceTimerRef.current = setTimeout(() => {
       setSelectedAnswer('');
       setInputValue('');
       setFeedback(null);
@@ -498,6 +515,10 @@ export default function PracticePage({ setInfo, cards = [], onBack, onPracticeCo
   };
 
   const handleContinueNext = () => {
+    if (autoAdvanceTimerRef.current) {
+      clearTimeout(autoAdvanceTimerRef.current);
+    }
+
     setSelectedAnswer('');
     setInputValue('');
     setFeedback(null);
