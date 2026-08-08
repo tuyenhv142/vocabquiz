@@ -321,6 +321,9 @@ async function deleteAccount(req, res) {
  * GET /api/leaderboard - Community leaderboard ranking
  */
 async function getLeaderboard(req, res) {
+  const currentUserId = req.query.userId;
+  const currentUserXP = req.query.userXP ? parseInt(req.query.userXP, 10) : null;
+
   try {
     const result = await db.query(
       `SELECT 
@@ -328,11 +331,12 @@ async function getLeaderboard(req, res) {
          u.email, 
          COALESCE(COUNT(s.id), 0)::int AS set_count,
          COALESCE(MAX(s.practice_percentage), 0)::int AS top_score,
+         COALESCE(SUM(s.practice_percentage), 0)::int AS total_practice_score,
          COALESCE(SUM(CASE WHEN s.practice_percentage >= 80 THEN 1 ELSE 0 END), 0)::int AS mastered_sets
        FROM users u
        LEFT JOIN study_sets s ON u.id = s.user_id
        GROUP BY u.id, u.email
-       ORDER BY mastered_sets DESC, top_score DESC, set_count DESC
+       ORDER BY total_practice_score DESC, mastered_sets DESC, set_count DESC
        LIMIT 20`
     );
 
@@ -341,7 +345,11 @@ async function getLeaderboard(req, res) {
       const name = parts[0].length > 4 ? `${parts[0].slice(0, 3)}***` : `${parts[0].slice(0, 1)}***`;
       const maskedEmail = `${name}@${parts[1] || 'email.com'}`;
       
-      const totalXP = (row.mastered_sets * 100) + (row.set_count * 20) + 50;
+      let totalXP = row.total_practice_score + (row.mastered_sets * 50) + (row.set_count * 10);
+      if (currentUserId && String(row.id) === String(currentUserId) && currentUserXP != null && currentUserXP > 0) {
+        totalXP = Math.max(totalXP, currentUserXP);
+      }
+
       const streakDays = Math.max(1, Math.min(30, row.mastered_sets * 2 + 1));
 
       return {

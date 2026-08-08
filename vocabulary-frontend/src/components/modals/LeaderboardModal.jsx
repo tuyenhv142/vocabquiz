@@ -8,15 +8,19 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
   const [communityLeaderboard, setCommunityLeaderboard] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  const streakData = getUserStreakData(userId);
+  const userRank = getUserRank(streakData.currentStreak, streakData.totalXP);
+
   useEffect(() => {
     if (!isOpen) return;
     fetchLeaderboard();
-  }, [isOpen]);
+  }, [isOpen, userId, streakData.totalXP]);
 
   const fetchLeaderboard = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/leaderboard`);
+      const url = `${API_BASE}/api/leaderboard?userId=${userId || ''}&userXP=${streakData.totalXP || 0}`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setCommunityLeaderboard(data);
@@ -29,9 +33,6 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
   };
 
   if (!isOpen) return null;
-
-  const streakData = getUserStreakData(userId);
-  const userRank = getUserRank(streakData.currentStreak, streakData.totalXP);
 
   const ranksList = [
     { title: '👑 Grandmaster Scholar', minDays: 30, minXP: 1500, desc: '30+ days streak or 1500+ XP' },
@@ -56,10 +57,10 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: '#0f172a' }}>
-                Bảng Xếp Hạng Người Học
+                Community Leaderboard
               </h2>
               <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                Theo dõi chuỗi ngày học liên tiếp & điểm XP cộng đồng
+                Track learning streaks & XP rankings across all active learners
               </p>
             </div>
           </div>
@@ -79,7 +80,7 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
             <div>
               <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                Danh Hiệu Hiện Tại Của Bạn
+                YOUR CURRENT RANK
               </span>
               <h3 style={{ margin: '2px 0 0', fontSize: '1.2rem', fontWeight: 800, color: '#1e40af' }}>
                 {userRank.badge} {userRank.title}
@@ -98,10 +99,10 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
               <Flame size={18} color="#ea580c" />
               <div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                  {streakData.currentStreak} Ngày
+                  {streakData.currentStreak} Days
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>
-                  Chuỗi hiện tại 🔥
+                  Current Streak 🔥
                 </div>
               </div>
             </div>
@@ -110,10 +111,10 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
               <Award size={18} color="#d97706" />
               <div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                  {streakData.longestStreak} Ngày
+                  {streakData.longestStreak} Days
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>
-                  Kỷ lục chuỗi ⚡
+                  Longest Streak ⚡
                 </div>
               </div>
             </div>
@@ -122,10 +123,10 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
               <Calendar size={18} color="#2563eb" />
               <div>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a' }}>
-                  {streakData.totalStudyDays} Ngày
+                  {streakData.totalStudyDays} Days
                 </div>
                 <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>
-                  Tổng ngày học 📅
+                  Active Days 📅
                 </div>
               </div>
             </div>
@@ -150,7 +151,7 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
               gap: '6px',
             }}
           >
-            <Users size={15} /> Top Người Học
+            <Users size={15} /> Top Learners
           </button>
 
           <button
@@ -169,7 +170,7 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
               gap: '6px',
             }}
           >
-            <Trophy size={15} /> Cấp Độ & Huy Chương
+            <Trophy size={15} /> Rank Badges & Guide
           </button>
         </div>
 
@@ -177,12 +178,12 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
         <div style={{ maxHeight: '280px', overflowY: 'auto', paddingRight: '4px' }}>
           {activeTab === 'leaderboard' ? (
             loading ? (
-              <div style={{ textTransform: 'center', padding: '30px 0', color: '#64748b', fontSize: '0.875rem' }}>
-                Đang tải bảng xếp hạng cộng đồng...
+              <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b', fontSize: '0.875rem' }}>
+                Loading community rankings...
               </div>
             ) : communityLeaderboard.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '30px 0', color: '#64748b', fontSize: '0.875rem' }}>
-                Chưa có dữ liệu xếp hạng. Hãy là người đầu tiên hoàn thành thử thách hôm nay!
+                No ranking data yet. Be the first to complete a daily challenge!
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -219,7 +220,7 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
                             {item.email}
                           </div>
                           <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            {item.masteredSets} bộ hoàn thành • {item.setCount} bộ từ vựng
+                            {item.masteredSets} mastered set{item.masteredSets === 1 ? '' : 's'} • {item.setCount} saved set{item.setCount === 1 ? '' : 's'}
                           </div>
                         </div>
                       </div>
@@ -263,7 +264,7 @@ export default function LeaderboardModal({ isOpen, onClose, userId }) {
                       </span>
                       {isCurrent && (
                         <span style={{ fontSize: '0.725rem', fontWeight: 800, color: '#16a34a' }}>
-                          (Hạng Của Bạn ✅)
+                          (Your Rank ✅)
                         </span>
                       )}
                     </div>
@@ -302,6 +303,7 @@ const modalStyle = {
   padding: '24px',
   boxShadow: '0 20px 50px rgba(0,0,0,0.18)',
   boxSizing: 'border-box',
+  margin: 'auto',
 };
 
 const closeBtnStyle = {
