@@ -905,21 +905,33 @@ export default function SetReviewPage({ setInfo, cards = [], onClose, onSaved, o
         <div style={{
           position: 'fixed',
           top: 0, left: 0, right: 0, bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.45)',
-          backdropFilter: 'blur(4px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.55)',
+          backdropFilter: 'blur(6px)',
           zIndex: 9999,
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: '12px',
-          color: '#ffffff',
-          fontWeight: 700,
+          padding: '20px',
         }}>
-          <Loader2 size={38} style={{ animation: 'spin 1s linear infinite' }} />
-          <span style={{ fontSize: '1rem', background: 'rgba(15,23,42,0.85)', padding: '10px 20px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)' }}>
-            Processing... Please wait
-          </span>
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '28px 36px',
+            borderRadius: '24px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '14px',
+            textAlign: 'center',
+            minWidth: '240px',
+          }}>
+            <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
+            <div>
+              <div style={{ fontSize: '1rem', fontWeight: 800, color: '#0f172a' }}>Saving Changes...</div>
+              <div style={{ fontSize: '0.825rem', color: '#64748b', marginTop: '4px', fontWeight: 500 }}>Updating vocabulary set & cards</div>
+            </div>
+          </div>
         </div>
       )}
 

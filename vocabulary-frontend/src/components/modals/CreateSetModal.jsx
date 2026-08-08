@@ -742,20 +742,34 @@ export default function CreateSetModal({ userId, onClose, onSetCreated }) {
           <div style={{
             position: 'absolute',
             top: 0, left: 0, right: 0, bottom: 0,
-            backgroundColor: 'rgba(255, 255, 255, 0.85)',
-            backdropFilter: 'blur(3px)',
-            zIndex: 50,
+            backgroundColor: 'rgba(255, 255, 255, 0.92)',
+            backdropFilter: 'blur(5px)',
+            zIndex: 100,
             borderRadius: '24px',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '12px',
-            color: '#0f172a',
-            fontWeight: 700,
+            padding: '20px',
           }}>
-            <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
-            <span style={{ fontSize: '0.95rem', color: '#2563eb' }}>Creating set... Please wait</span>
+            <div style={{
+              backgroundColor: '#ffffff',
+              padding: '24px 32px',
+              borderRadius: '20px',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.15)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '12px',
+              textAlign: 'center',
+              minWidth: '220px',
+            }}>
+              <Loader2 size={36} color="#2563eb" style={{ animation: 'spin 1s linear infinite' }} />
+              <div>
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>Creating Vocabulary Set...</div>
+                <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '3px', fontWeight: 500 }}>Saving your new cards & definitions</div>
+              </div>
+            </div>
           </div>
         )}
 
